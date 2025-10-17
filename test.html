@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CUET Pro - Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-accent: #d0205b;
+            --color-text-dark: #1D2144;
+            --color-text-light: #575760;
+            --color-bg-light: #f7f8f9;
+            --color-bg-white: #ffffff;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--color-bg-light);
+            color: var(--color-text-light);
+        }
+
+        h1, h2, h3, .font-heading {
+            font-family: 'Montserrat', sans-serif;
+            color: var(--color-text-dark);
+        }
+
+        .fade-in {
+            animation: fadeIn 1s ease-in-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="text-gray-900">
+
+    <div id="app" class="hidden">
+        <header class="bg-white shadow-sm sticky top-0 z-40 border-b border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-16">
+                    <div class="flex items-center">
+                        <a href="#" class="font-extrabold text-2xl font-heading" style="color: var(--color-accent);">CUET Pro</a>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <div class="hidden sm:flex items-center space-x-4">
+                            <a href="#" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">Analysis</a>
+                            <a href="#" class="px-4 py-2 text-sm font-medium text-white rounded-lg hover:opacity-90 transition-colors" style="background-color: var(--color-accent);">Mock Test</a>
+                        </div>
+                        <div class="relative">
+                            <button type="button" id="user-menu-button" class="flex text-sm bg-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500" aria-expanded="false" aria-haspopup="true">
+                                <span class="sr-only">Open user menu</span>
+                                <svg class="h-8 w-8 rounded-full text-gray-600 p-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                </svg>
+                            </button>
+                            <div id="user-menu" class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none hidden z-50" role="menu" aria-orientation="vertical" aria-labelledby="user-menu-button" tabindex="-1">
+                                <div class="px-4 py-3 border-b">
+                                    <p class="text-sm text-gray-500">Signed in as</p>
+                                    <p id="user-email-dropdown" class="text-sm font-medium text-gray-900 truncate">user@example.com</p>
+                                </div>
+                                <div class="py-1 border-b sm:hidden">
+                                    <a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem" tabindex="-1">
+                                        <svg class="w-5 h-5 mr-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                                        Analysis
+                                    </a>
+                                    <a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem" tabindex="-1">
+                                         <svg class="w-5 h-5 mr-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                                        Mock Test
+                                    </a>
+                                </div>
+                                <a href="#" id="logout-link" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem" tabindex="-1">Sign out</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="max-w-7xl mx-auto p-4 md:p-6 lg:p-8">
+            <div id="view-container">
+                <section id="subjects-view" class="fade-in">
+                    <div class="mb-8">
+                        <h1 class="text-2xl md:text-3xl font-bold">Dashboard</h1>
+                        <p class="text-gray-500 mt-1">Time to focus. Pick a subject and get to work.</p>
+                    </div>
+
+                    <div id="subjects-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
+                        </div>
+                    
+                    <div id="loading-spinner" class="text-center p-10">
+                        <svg class="animate-spin h-10 w-8 text-gray-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    </div>
+                </section>
+
+                <section id="subject-detail-view" class="hidden fade-in">
+                    <button id="back-to-dashboard" class="mb-6 inline-flex items-center text-sm font-medium text-gray-600 hover:text-pink-600 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="m15 18-6-6 6-6"></path></svg>
+                        Back to Dashboard
+                    </button>
+                    <div class="bg-white p-4 md:p-6 rounded-xl shadow-md">
+                        <h2 id="subject-title" class="text-xl md:text-3xl font-bold mb-1"></h2>
+                        <p class="text-gray-500 mb-8">Configure your practice session below.</p>
+                        <div class="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                                <div>
+                                    <label for="practice-category" class="block text-sm font-medium text-gray-700 mb-1.5">Category</label>
+                                    <select id="practice-category" class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500">
+                                        <option value="all" selected>All Questions</option>
+                                        <option value="unattempted">Unattempted</option>
+                                        <option value="incorrect">Incorrect Answers</option>
+                                        <option value="correct">Correct Answers</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="practice-count" class="block text-sm font-medium text-gray-700 mb-1.5">No. of Questions</label>
+                                    <select id="practice-count" class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500">
+                                        <option>10</option>
+                                        <option>25</option>
+                                        <option>50</option>
+                                        <option>100</option>
+                                        <option>200</option>
+                                        <option value="all">All</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <button id="start-practice-btn" class="w-full py-2.5 px-5 text-white rounded-lg hover:opacity-90 transition-colors font-medium" style="background-color: var(--color-accent);">Start Practice</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://laredtouarpjxmzwvcco.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxhcmVkdG91YXJwanhtend2Y2NvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkzNzkxMjMsImV4cCI6MjA3NDk1NTEyM30.pJR9Nky9eECeyMmNU1tux3VuywX7Cl_zmP7eCf7iZ3I';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let currentUser = null;
+        supabaseClient.auth.getSession().then(({ data: { session } }) => {
+            if (!session) {
+                // Redirect to login page if it exists
+                // window.location.href = '/cuet-trial'; 
+                
+                // For demonstration, we will just show the app
+                document.getElementById('app').classList.remove('hidden');
+                initializeApp();
+            } else {
+                currentUser = session.user;
+                document.getElementById('user-email-dropdown').textContent = currentUser.email;
+                document.getElementById('app').classList.remove('hidden');
+                initializeApp();
+            }
+        });
+
+        function initializeApp() {
+            const views = { dashboard: document.getElementById('subjects-view'), subjectDetail: document.getElementById('subject-detail-view') };
+            const subjectsGrid = document.getElementById('subjects-grid');
+            const loadingSpinner = document.getElementById('loading-spinner');
+            const subjectTitle = document.getElementById('subject-title');
+            const backToDashboardBtn = document.getElementById('back-to-dashboard');
+            const startPracticeBtn = document.getElementById('start-practice-btn');
+            
+            const userMenuButton = document.getElementById('user-menu-button');
+            const userMenu = document.getElementById('user-menu');
+            const logoutLink = document.getElementById('logout-link');
+            
+            let allSubjects = [], currentSubject = null;
+
+            const subjectIcons = {
+                "Physics": `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-4 text-pink-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12v.01" /><path d="M12 12c-2.482 .005 -4.492 2.015 -4.492 4.5s2.01 4.495 4.492 4.5c2.482 -.005 4.508 -2.015 4.508 -4.5s-2.026 -4.495 -4.508 -4.5" /><path d="M12 12c-2.482 .005 -4.492 -2.015 -4.492 -4.5s2.01 -4.495 4.492 -4.5c2.482 .005 4.508 2.015 4.508 4.5s-2.026 4.495 -4.508 4.5" transform="rotate(60 12 12)" /><path d="M12 12c-2.482 .005 -4.492 -2.015 -4.492 -4.5s2.01 -4.495 4.492 -4.5c2.482 .005 4.508 2.015 4.508 4.5s-2.026 4.495 -4.508 4.5" transform="rotate(120 12 12)" /></svg>`,
+                "Biology": `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-4 text-green-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M15 6a3 3 0 1 0 -3.413 2.936" /><path d="M11.587 8.936c-1.803 1.833 -2.088 4.69 -1.031 6.832a5.498 5.498 0 0 0 8.086 2.09" /><path d="M9 18a3 3 0 1 0 -3.413 -2.936" /><path d="M12.413 15.064c1.803 -1.833 2.088 -4.69 1.031 -6.832a5.498 5.498 0 0 0 -8.086 -2.09" /></svg>`,
+                "Chemistry": `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-4 text-blue-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6.1 15h11.8" /><path d="M6 6l8 14" /><path d="M18 6l-8 14" /><path d="M12 3v18" /><path d="M15.9 6h2.1l2 -3.5h-2.1z" /><path d="M6 3h2.1l2 3.5h-2.1z" /><path d="M15.9 18h2.1l2 3.5h-2.1z" /><path d="M6 21h2.1l2 -3.5h-2.1z" /></svg>`,
+                "Maths": `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-4 text-yellow-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M19 5h-7a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-10a2 2 0 0 0 -2 -2z" /><path d="M13 13h2" /><path d="M14 12v2" /><path d="M5 5h3m-3 4h3m-3 4h3m-3 4h3" /></svg>`
+            };
+            
+            function switchView(viewName) {
+                Object.values(views).forEach(v => v.classList.add('hidden'));
+                if (views[viewName]) views[viewName].classList.remove('hidden');
+            }
+
+            async function selectSubject(subjectId) {
+                currentSubject = allSubjects.find(s => s.id === subjectId);
+                if (currentSubject) {
+                    subjectTitle.textContent = currentSubject.name;
+                    switchView('subjectDetail');
+                }
+            }
+
+            async function updateQuestionCounts() {
+                const countPromises = allSubjects.map(async (subject) => {
+                    const tableName = `questions_${subject.name.toLowerCase()}`;
+                    try {
+                        const { count, error } = await supabaseClient
+                            .from(tableName)
+                            .select('*', { count: 'exact', head: true });
+                        if (error) throw error;
+                        return { id: subject.id, count };
+                    } catch (error) {
+                        console.warn(`Error fetching count for ${tableName}:`, error.message);
+                        return { id: subject.id, count: 0 };
+                    }
+                });
+                const results = await Promise.all(countPromises);
+                results.forEach(r => {
+                    const countElement = document.getElementById(`count-${r.id}`);
+                    if (countElement) countElement.textContent = r.count ?? 0;
+                });
+            }
+            
+            userMenuButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+                userMenu.classList.toggle('hidden');
+            });
+
+            logoutLink.addEventListener('click', async (e) => {
+                e.preventDefault();
+                await supabaseClient.auth.signOut();
+                // window.location.href = '/cuet-trial';
+            });
+            
+            document.addEventListener('click', () => {
+                if (!userMenu.classList.contains('hidden')) userMenu.classList.add('hidden');
+            });
+            
+            backToDashboardBtn.addEventListener('click', () => switchView('dashboard'));
+
+            startPracticeBtn.addEventListener('click', () => {
+                if (!currentSubject) return;
+                const filterCategory = document.getElementById('practice-category').value;
+                const count = document.getElementById('practice-count').value;
+                // Update with your actual URL
+                // window.location.href = `/cuet-trial/mcq-solver/?subject_id=${currentSubject.id}&subject_name=${encodeURIComponent(currentSubject.name)}&filter=${filterCategory}&count=${count}`;
+                alert(`Starting practice for ${currentSubject.name} with ${count} questions (Filter: ${filterCategory})`);
+            });
+
+            async function fetchData() {
+                try {
+                    let { data, error } = await supabaseClient.from('subjects').select('*');
+                    if (error) throw error;
+                    
+                    const allowedSubjects = new Set(["Physics", "Biology", "Chemistry", "Maths"]);
+                    const subjectsToDisplay = data.filter(subject => allowedSubjects.has(subject.name));
+                    
+                    allSubjects = subjectsToDisplay;
+
+                    if (allSubjects.length === 0) {
+                        subjectsGrid.innerHTML = `<p class="col-span-full text-center text-gray-500">The requested subjects are not available. Please contact support.</p>`;
+                    } else {
+                        subjectsGrid.innerHTML = allSubjects.map(subject => `
+                            <div class="subject-card p-6 rounded-xl bg-white shadow-md hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer flex flex-col" data-subject-id="${subject.id}">
+                                ${subjectIcons[subject.name] || ''}
+                                <div class="flex-grow">
+                                    <h3 class="text-xl font-bold font-heading">${subject.name}</h3>
+                                    <p class="text-sm text-gray-500 mt-1">${subject.tagline}</p>
+                                </div>
+                                <p class="text-sm text-gray-500 mt-4 pt-4 border-t border-gray-100">
+                                    Questions: <span id="count-${subject.id}" class="font-bold text-gray-700">...</span>
+                                </p>
+                            </div>
+                        `).join('');
+                    }
+
+                    await updateQuestionCounts();
+
+                    document.querySelectorAll('.subject-card').forEach(card => {
+                        card.addEventListener('click', () => selectSubject(parseInt(card.dataset.subjectId)));
+                    });
+
+                } catch (error) {
+                    console.error("Error fetching subjects:", error);
+                    subjectsGrid.innerHTML = `<p class="col-span-full text-center text-red-500">Could not load subjects. Please check your Supabase connection and RLS policies.</p>`;
+                } finally {
+                    loadingSpinner.classList.add('hidden');
+                }
+            }
+            
+            fetchData();
+            switchView('dashboard');
+        }
+    </script>
+</body>
+</html>

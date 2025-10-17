@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CUET Pro - Customize Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-accent: #d0205b;
+            --color-text-dark: #1D2144;
+            --color-text-light: #575760;
+            --color-bg-light: #f7f8f9;
+        }
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--color-bg-light);
+            color: var(--color-text-light);
+        }
+        h1, h2, .font-heading {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            color: var(--color-text-dark);
+        }
+        .fade-in { animation: fadeIn 0.5s ease-in-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        #toast-notification {
+            animation: slideInDown 0.5s ease-out, fadeOut 0.5s 2.5s ease-in forwards;
+        }
+        @keyframes slideInDown { from { transform: translate(-50%, -100%); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+    </style>
+</head>
+<body class="text-gray-900">
+    <div id="toast-notification" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 hidden bg-green-500 text-white font-semibold py-2 px-6 rounded-full shadow-lg"><p>Changes saved successfully!</p></div>
+
+    <div id="app" class="hidden">
+        <header class="bg-white shadow-sm sticky top-0 z-40">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-16">
+                    <a href="home.html" class="font-extrabold text-2xl font-heading" style="color: var(--color-accent);">CUET Pro</a>
+                    <a href="home.html" class="px-4 py-2 text-sm font-medium text-white rounded-lg hover:opacity-90 transition-colors" style="background-color: var(--color-accent);">Back to Dashboard</a>
+                </div>
+            </div>
+        </header>
+
+        <main class="max-w-7xl mx-auto p-4 md:p-6 lg:p-8">
+            <div class="text-center mb-8">
+                <h1 class="text-2xl md:text-4xl font-bold">Customize Your Dashboard</h1>
+                <p class="mt-2 max-w-2xl mx-auto">Add or remove subjects to personalize your learning space.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 pb-24">
+                <div class="bg-white p-4 md:p-6 rounded-xl shadow-lg fade-in">
+                    <h2 class="text-xl font-bold mb-4 flex items-center"><svg class="w-6 h-6 mr-2 text-pink-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>Your Subjects</h2>
+                    <div id="user-subjects-list" class="space-y-3 min-h-[100px]"></div>
+                </div>
+                <div class="bg-white p-4 md:p-6 rounded-xl shadow-lg fade-in" style="animation-delay: 0.1s;">
+                    <h2 class="text-xl font-bold mb-4 flex items-center"><svg class="w-6 h-6 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>Available Subjects</h2>
+                    <div id="available-subjects-list" class="space-y-3 min-h-[100px]"></div>
+                </div>
+            </div>
+        </main>
+        
+        <footer class="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-sm p-4 border-t border-gray-200">
+            <div class="max-w-7xl mx-auto">
+                 <button id="save-changes-btn" class="w-full py-3 px-5 text-white rounded-lg hover:opacity-90 transition-colors font-semibold text-lg" style="background-color: var(--color-accent);">Save Changes</button>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://laredtouarpjxmzwvcco.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxhcmVkdG91YXJwanhtend2Y2NvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkzNzkxMjMsImV4cCI6MjA3NDk1NTEyM30.pJR9Nky9eECeyMmNU1tux3VuywX7Cl_zmP7eCf7iZ3I';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let currentUser = null;
+        supabaseClient.auth.getSession().then(({ data: { session } }) => {
+            if (!session) {
+                window.location.href = 'index.html';
+            } else {
+                currentUser = session.user;
+                document.getElementById('app').classList.remove('hidden');
+                initializeApp();
+            }
+        });
+
+        function initializeApp() {
+            const userSubjectsList = document.getElementById('user-subjects-list');
+            const availableSubjectsList = document.getElementById('available-subjects-list');
+            const saveChangesBtn = document.getElementById('save-changes-btn');
+            const toast = document.getElementById('toast-notification');
+            let allSubjects = [], userSubjectIds = new Set();
+            const localStorageKey = `cuetProUserSubjects_${currentUser.id}`;
+
+            async function loadInitialData() {
+                try {
+                    const { data, error } = await supabaseClient.from('subjects').select('*');
+                    if (error) throw error;
+                    allSubjects = data;
+                    const savedSubjectIds = localStorage.getItem(localStorageKey);
+                    if (savedSubjectIds) {
+                        JSON.parse(savedSubjectIds).forEach(id => userSubjectIds.add(id));
+                    } else {
+                        allSubjects.forEach(subject => userSubjectIds.add(subject.id));
+                    }
+                    renderLists();
+                } catch (error) {
+                    console.error("Error loading initial data:", error);
+                    userSubjectsList.innerHTML = `<p class="text-red-500">Could not load subjects.</p>`;
+                }
+            }
+
+            function renderLists() {
+                userSubjectsList.innerHTML = ''; availableSubjectsList.innerHTML = '';
+                if (allSubjects.length === 0) return;
+                const userSubjects = allSubjects.filter(s => userSubjectIds.has(s.id));
+                const availableSubjects = allSubjects.filter(s => !userSubjectIds.has(s.id));
+
+                userSubjectsList.innerHTML = userSubjects.length > 0 ? userSubjects.map(s => createSubjectCard(s, 'remove')).join('') : `<p class="text-center p-4">Add subjects from the available list!</p>`;
+                availableSubjectsList.innerHTML = availableSubjects.length > 0 ? availableSubjects.map(s => createSubjectCard(s, 'add')).join('') : `<p class="text-center p-4">All subjects selected!</p>`;
+                attachEventListeners();
+            }
+            
+            function createSubjectCard(subject, type) {
+                const isRemove = type === 'remove';
+                const buttonBg = isRemove ? 'bg-red-100 hover:bg-red-200' : 'bg-pink-100 hover:bg-pink-200';
+                const buttonText = isRemove ? 'text-red-600' : 'text-pink-600';
+                const icon = isRemove ? `<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 12H4" /></svg>` : `<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" /></svg>`;
+                return `<div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"><div><p class="font-bold">${subject.name}</p><p class="text-sm">${subject.tagline}</p></div><button data-id="${subject.id}" data-action="${type}" class="subject-action-btn p-2 rounded-full ${buttonBg} ${buttonText} transition-colors">${icon}</button></div>`;
+            }
+
+            function handleSubjectAction(e) {
+                const button = e.target.closest('.subject-action-btn');
+                if (!button) return;
+                const subjectId = parseInt(button.dataset.id), action = button.dataset.action;
+                action === 'add' ? userSubjectIds.add(subjectId) : userSubjectIds.delete(subjectId);
+                renderLists();
+            }
+
+            function attachEventListeners() { document.querySelectorAll('.subject-action-btn').forEach(btn => btn.addEventListener('click', handleSubjectAction)); }
+            function saveChanges() {
+                localStorage.setItem(localStorageKey, JSON.stringify(Array.from(userSubjectIds)));
+                toast.classList.remove('hidden');
+                setTimeout(() => { toast.classList.add('hidden'); }, 3000);
+            }
+            
+            saveChangesBtn.addEventListener('click', saveChanges);
+            loadInitialData();
+        }
+    </script>
+</body>
+</html>
