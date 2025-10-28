@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drona Career Institute - Demo</title>
+    <!-- External Libraries -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Combined CSS -->
+    <style>
+        :root {
+            --color-primary: #007AFF;
+            --color-light-bg: #F0F4F7;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--color-light-bg);
+        }
+        /* Page container logic */
+        .page-container.hidden {
+            display: none;
+        }
+        /* Login page fade-in */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Active nav link style */
+        .nav-link-active {
+            color: var(--color-primary);
+            font-weight: 600;
+        }
+        /* Analysis viewer tab style */
+        #student-page .tab-btn.active {
+            background-color: var(--color-primary);
+            color: white;
+        }
+        /* School analytics tab style */
+        #analytics-page .tab-btn.active {
+            border-color: var(--color-primary);
+            color: var(--color-primary);
+        }
+        /* Helper to make headers consistent */
+        .page-header {
+            background-color: white;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            position: sticky;
+            top: 0;
+            z-index: 40;
+        }
+    </style>
+</head>
+<body class="text-gray-900">
+
+    <!-- =================================================================== -->
+    <!-- ========= PAGE 1: LOGIN =========================================== -->
+    <!-- =================================================================== -->
+    <div id="login-page" class="page-container min-h-screen flex items-center justify-center">
+        <div class="w-full max-w-sm p-8 space-y-8 bg-white rounded-xl shadow-lg fade-in">
+            <div>
+                <img src="https://placehold.co/64x64/007AFF/FFFFFF?text=D&font=inter" alt="Drona Logo" class="h-16 w-16 mx-auto rounded-xl">
+                <h1 class="text-3xl font-extrabold text-center mt-4" style="color: var(--color-primary);">Drona Career Institute</h1>
+                <h2 class="mt-2 text-xl font-bold text-center text-gray-900">Teacher & Admin Portal</h2>
+                <p class="mt-2 text-center text-sm text-gray-600">Sign in to access your school's dashboard</p>
+            </div>
+            <form id="login-form" class="mt-8 space-y-6">
+                <div class="rounded-md shadow-sm -space-y-px">
+                    <div>
+                        <label for="email-address" class="sr-only">Email address</label>
+                        <input id="email-address" name="email" type="email" autocomplete="email" required class="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm" placeholder="Email address" value="teacher@drona.edu">
+                    </div>
+                    <div>
+                        <label for="password" class="sr-only">Password</label>
+                        <input id="password" name="password" type="password" autocomplete="current-password" required class="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm" placeholder="Password" value="password">
+                    </div>
+                </div>
+                <div id="login-error-message" class="text-sm text-red-600 font-medium text-center h-4"></div>
+                <div>
+                    <button type="submit" class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors" style="background-color: var(--color-primary);">
+                        Sign In
+                    </button>
+                </div>
+            </form>
+            <p class="text-center text-xs text-gray-500">Demo Mode: Any email/password will work.</p>
+        </div>
+    </div>
+
+    <!-- =================================================================== -->
+    <!-- ========= PAGE 2: TEACHER DASHBOARD =============================== -->
+    <!-- =================================================================== -->
+    <div id="dashboard-page" class="page-container hidden">
+        <!-- Dashboard Header -->
+        <header class="page-header">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-16">
+                    <a href="#" class="flex items-center space-x-2 font-extrabold text-2xl nav-link" data-target="dashboard-page" style="color: var(--color-primary);">
+                        <img src="https://placehold.co/32x32/007AFF/FFFFFF?text=D&font=inter" alt="Drona Logo" class="h-8 w-8 rounded-lg">
+                        <span>Drona Career Institute</span>
+                    </a>
+                    <div class="hidden md:flex items-center space-x-6">
+                        <a href="#" class="text-sm nav-link nav-link-active" data-target="dashboard-page">Students</a>
+                        <a href="#" class="text-sm font-medium text-gray-500 hover:text-gray-800 nav-link" data-target="analytics-page">School Analytics</a>
+                        <div class="relative">
+                            <button id="user-menu-btn-dash" class="user-menu-btn flex items-center justify-center w-10 h-10 bg-gray-100 rounded-full hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                            </button>
+                            <div id="user-menu-dropdown-dash" class="user-menu-dropdown hidden absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl py-1 z-50 origin-top-right">
+                                <div class="px-4 py-3 border-b">
+                                    <p class="text-sm text-gray-500">Signed in as</p>
+                                    <p class="user-email-dropdown font-medium text-gray-800 truncate"></p>
+                                </div>
+                                <button class="logout-btn w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-red-500 hover:text-white">Logout</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="md:hidden">
+                        <button id="mobile-menu-btn-dash" class="mobile-menu-btn inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500">
+                            <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div id="mobile-menu-dash" class="mobile-menu md:hidden hidden">
+                <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                    <a href="#" class="bg-blue-50 text-blue-700 block px-3 py-2 rounded-md text-base font-medium nav-link" data-target="dashboard-page">Students</a>
+                    <a href="#" class="text-gray-600 hover:bg-gray-50 hover:text-gray-800 block px-3 py-2 rounded-md text-base font-medium nav-link" data-target="analytics-page">School Analytics</a>
+                </div>
+                <div class="pt-4 pb-3 border-t border-gray-200">
+                    <div class="flex items-center px-5"><div class="ml-3"><p class="mobile-user-email text-base font-medium text-gray-800 truncate"></p></div></div>
+                    <div class="mt-3 px-2 space-y-1"><button class="logout-btn w-full text-left block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100">Logout</button></div>
+                </div>
+            </div>
+        </header>
+        <!-- Dashboard Content -->
+        <main class="max-w-7xl mx-auto p-4 md:p-6 lg:p-8">
+            <div id="dashboard-content" class="space-y-8">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h1 id="school-name-header-dash" class="text-2xl md:text-3xl font-bold text-gray-800">School Dashboard</h1>
+                        <p class="text-gray-500 mt-1">Manage students and view their performance.</p>
+                    </div>
+                    <button id="add-student-btn" class="mt-4 sm:mt-0 w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white hover:opacity-90 transition-colors" style="background-color: var(--color-primary);">
+                        <svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                        Add New Student
+                    </button>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div class="p-4">
+                        <input type="text" id="student-search-bar" class="w-full px-4 py-2 border border-gray-300 rounded-lg" placeholder="Search for students by name or email...">
+                    </div>
+                    <div class="overflow-x-auto hidden md:block">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student Name</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                    <th scope="col" class="relative px-6 py-3"><span class="sr-only">Actions</span></th>
+                                </tr>
+                            </thead>
+                            <tbody id="student-list-body" class="bg-white divide-y divide-gray-200"></tbody>
+                        </table>
+                    </div>
+                    <div id="student-list-cards" class="md:hidden divide-y divide-gray-200"></div>
+                    <div id="no-results" class="text-center p-6 text-gray-500 hidden">No students found matching your search.</div>
+                </div>
+            </div>
+        </main>
+        <!-- Add Student Modal -->
+        <div id="add-student-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden p-4">
+            <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg w-full max-w-md">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">Add New Student Account</h2>
+                <form id="add-student-form" class="space-y-4">
+                    <div>
+                        <label for="student-name" class="block text-sm font-medium text-gray-700">Full Name</label>
+                        <input type="text" id="student-name" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="student-email" class="block text-sm font-medium text-gray-700">Email Address</label>
+                        <input type="email" id="student-email" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="student-password" class="block text-sm font-medium text-gray-700">Temporary Password</label>
+                        <input type="password" id="student-password" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div id="modal-error-message" class="text-sm text-red-600 font-medium h-4"></div>
+                    <div class="flex justify-end space-x-4 pt-4">
+                        <button type="button" id="cancel-add-student" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">Cancel</button>
+                        <button type="submit" id="submit-add-student" class="px-4 py-2 text-sm font-medium text-white rounded-lg hover:opacity-90" style="background-color: var(--color-primary);">Create Account</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- =================================================================== -->
+    <!-- ========= PAGE 3: SCHOOL ANALYTICS ================================ -->
+    <!-- =================================================================== -->
+    <div id="analytics-page" class="page-container hidden">
+        <!-- Analytics Header -->
+        <header class="page-header">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-16">
+                    <a href="#" class="flex items-center space-x-2 font-extrabold text-2xl nav-link" data-target="dashboard-page" style="color: var(--color-primary);">
+                        <img src="https://placehold.co/32x32/007AFF/FFFFFF?text=D&font=inter" alt="Drona Logo" class="h-8 w-8 rounded-lg">
+                        <span>Drona Career Institute</span>
+                    </a>
+                    <div class="hidden md:flex items-center space-x-6">
+                        <a href="#" class="text-sm font-medium text-gray-500 hover:text-gray-800 nav-link" data-target="dashboard-page">Students</a>
+                        <a href="#" class="text-sm nav-link nav-link-active" data-target="analytics-page">School Analytics</a>
+                        <div class="relative">
+                            <button id="user-menu-btn-analytics" class="user-menu-btn flex items-center justify-center w-10 h-10 bg-gray-100 rounded-full hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                            </button>
+                            <div id="user-menu-dropdown-analytics" class="user-menu-dropdown hidden absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl py-1 z-50 origin-top-right">
+                                <div class="px-4 py-3 border-b"><p class="text-sm text-gray-500">Signed in as</p><p class="user-email-dropdown font-medium text-gray-800 truncate"></p></div>
+                                <button class="logout-btn w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-red-500 hover:text-white">Logout</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="md:hidden">
+                        <button id="mobile-menu-btn-analytics" class="mobile-menu-btn inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500">
+                            <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div id="mobile-menu-analytics" class="mobile-menu md:hidden hidden">
+                <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                    <a href="#" class="text-gray-600 hover:bg-gray-50 hover:text-gray-800 block px-3 py-2 rounded-md text-base font-medium nav-link" data-target="dashboard-page">Students</a>
+                    <a href="#" class="bg-blue-50 text-blue-700 block px-3 py-2 rounded-md text-base font-medium nav-link" data-target="analytics-page">School Analytics</a>
+                </div>
+                <div class="pt-4 pb-3 border-t border-gray-200">
+                    <div class="flex items-center px-5"><div class="ml-3"><p class="mobile-user-email text-base font-medium text-gray-800 truncate"></p></div></div>
+                    <div class="mt-3 px-2 space-y-1"><button class="logout-btn w-full text-left block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100">Logout</button></div>
+                </div>
+            </div>
+        </header>
+        <!-- Analytics Content -->
+        <main class="max-w-7xl mx-auto p-4 md:p-6 lg:p-8">
+            <div id="loading-view-analytics">
+                <div class="text-center p-12"><p class="text-gray-600">Calculating school-wide analytics...</p></div>
+            </div>
+            <div id="analytics-content" class="hidden space-y-8">
+                <div>
+                    <h1 id="school-name-header-analytics" class="text-2xl md:text-3xl font-bold text-gray-800">School</h1>
+                    <p class="text-gray-500 mt-1">A bird's-eye view of your students' performance.</p>
+                </div>
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="bg-white p-6 rounded-xl shadow-sm"><h3 class="font-semibold text-gray-500 text-sm mb-1">Total Students</h3><p id="total-students" class="text-3xl font-bold text-blue-600">0</p></div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm"><h3 class="font-semibold text-gray-500 text-sm mb-1">Overall Class Accuracy</h3><p id="class-accuracy" class="text-3xl font-bold text-purple-600">0%</p></div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm"><h3 class="font-semibold text-gray-500 text-sm mb-1">Easiest Subject (Class Avg)</h3><p id="easiest-subject" class="text-xl font-bold text-green-600">-</p></div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm"><h3 class="font-semibold text-gray-500 text-sm mb-1">Hardest Subject (Class Avg)</h3><p id="hardest-subject" class="text-xl font-bold text-red-600">-</p></div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-white p-6 rounded-xl shadow-sm">
+                        <h2 class="text-xl font-bold text-gray-800 mb-4">Class Weekly Trend</h2>
+                        <div class="h-96"><canvas id="weeklyTrendChart"></canvas></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm">
+                        <h2 class="text-xl font-bold text-gray-800 mb-4">Subject Ranking (Hardest to Easiest)</h2>
+                        <div class="h-96"><canvas id="subjectRankingChart"></canvas></div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm">
+                    <div class="p-6">
+                        <h2 class="text-xl font-bold text-gray-800">Student Performance</h2>
+                        <div class="border-b border-gray-200 mt-4">
+                            <nav class="-mb-px flex space-x-6" aria-label="Tabs" id="analytics-tab-buttons">
+                                <button class="tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="full">Full Ranking</button>
+                                <button class="tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="top">Top 10 Performers</button>
+                                <button class="tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="watch">Bottom 10 to Watch</button>
+                            </nav>
+                        </div>
+                    </div>
+                    <div id="full-ranking-table" class="tab-content overflow-x-auto"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- =================================================================== -->
+    <!-- ========= PAGE 4: STUDENT ANALYSIS ================================ -->
+    <!-- =================================================================== -->
+    <div id="student-page" class="page-container hidden">
+        <!-- Student Analysis Header -->
+        <header class="page-header">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-16">
+                    <a href="#" class="flex items-center space-x-2 font-extrabold text-2xl nav-link" data-target="dashboard-page" style="color: var(--color-primary);">
+                        <img src="https://placehold.co/32x32/007AFF/FFFFFF?text=D&font=inter" alt="Drona Logo" class="h-8 w-8 rounded-lg">
+                        <span>Drona Career Institute</span>
+                    </a>
+                    <div class="hidden md:flex items-center space-x-6">
+                        <a href="#" class="text-sm font-medium text-gray-500 hover:text-gray-800 nav-link" data-target="dashboard-page">Students</a>
+                        <a href="#" class="text-sm font-medium text-gray-500 hover:text-gray-800 nav-link" data-target="analytics-page">School Analytics</a>
+                        <div class="relative">
+                            <button id="user-menu-btn-student" class="user-menu-btn flex items-center justify-center w-10 h-10 bg-gray-100 rounded-full hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                            </button>
+                            <div id="user-menu-dropdown-student" class="user-menu-dropdown hidden absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl py-1 z-50 origin-top-right">
+                                <div class="px-4 py-3 border-b"><p class="text-sm text-gray-500">Signed in as</p><p class="user-email-dropdown font-medium text-gray-800 truncate"></p></div>
+                                <button class="logout-btn w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-red-500 hover:text-white">Logout</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="md:hidden">
+                        <button id="mobile-menu-btn-student" class="mobile-menu-btn inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500">
+                            <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div id="mobile-menu-student" class="mobile-menu md:hidden hidden">
+                <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                    <a href="#" class="text-gray-600 hover:bg-gray-50 hover:text-gray-800 block px-3 py-2 rounded-md text-base font-medium nav-link" data-target="dashboard-page">Students</a>
+                    <a href="#" class="text-gray-600 hover:bg-gray-50 hover:text-gray-800 block px-3 py-2 rounded-md text-base font-medium nav-link" data-target="analytics-page">School Analytics</a>
+                </div>
+                <div class="pt-4 pb-3 border-t border-gray-200">
+                    <div class="flex items-center px-5"><div class="ml-3"><p class="mobile-user-email text-base font-medium text-gray-800 truncate"></p></div></div>
+                    <div class="mt-3 px-2 space-y-1"><button class="logout-btn w-full text-left block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100">Logout</button></div>
+                </div>
+            </div>
+        </header>
+        <!-- Student Analysis Content -->
+        <main class="max-w-7xl mx-auto p-4 md:p-6 lg:p-8">
+            <div id="loading-view-student">
+                <div class="text-center p-12"><p class="text-gray-600">Loading deep student analysis...</p></div>
+            </div>
+            <div id="student-analysis-content" class="hidden space-y-8">
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-bold text-gray-800">Deep Analysis for <span id="student-name-header" class="text-blue-600"></span></h1>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-white p-5 rounded-xl shadow-sm text-center"><p id="total-answered" class="font-bold text-3xl text-blue-600">0</p><p class="text-sm font-medium text-gray-500 mt-1">Total Answered</p></div>
+                    <div class="bg-white p-5 rounded-xl shadow-sm text-center"><p id="accuracy" class="font-bold text-3xl text-purple-600">0%</p><p class="text-sm font-medium text-gray-500 mt-1">Overall Accuracy</p></div>
+                    <div class="bg-white p-5 rounded-xl shadow-sm text-center"><p id="strongest-subject" class="font-bold text-xl md:text-2xl text-green-600">-</p><p class="text-sm font-medium text-gray-500 mt-1">Strongest Subject</p></div>
+                    <div class="bg-white p-5 rounded-xl shadow-sm text-center"><p id="weakest-subject" class="font-bold text-xl md:text-2xl text-red-600">-</p><p class="text-sm font-medium text-gray-500 mt-1">Weakest Subject</p></div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">Weekly Performance Trend</h2>
+                    <div class="h-80"><canvas id="studentWeeklyTrendChart"></canvas></div>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm">
+                    <h2 class="text-xl font-bold text-gray-800 p-6 border-b">Per-Subject Topic Analysis</h2>
+                    <div class="flex flex-col md:flex-row">
+                        <div id="subject-tabs-container" class="md:w-1/4 p-4 border-b md:border-b-0 md:border-r flex md:flex-col flex-wrap gap-2"></div>
+                        <div id="subject-details-container" class="md:w-3/4 p-6"></div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm">
+                    <h2 class="text-xl font-bold text-gray-800 p-6">Mock Test History</h2>
+                    <div id="mock-tests-container" class="p-6 pt-0 overflow-x-auto"></div>
+                </div>
+            </div>
+            <div id="student-error-content" class="hidden"></div>
+        </main>
+    </div>
+
+
+    <!-- =================================================================== -->
+    <!-- ========= JAVASCRIPT ============================================== -->
+    <!-- =================================================================== -->
+    <script>
+        // ===================================================================
+        // ========= PART 1: MOCK DATA GENERATOR ===========================
+        // ===================================================================
+        
+        /*
+        * MOCK DATA GENERATOR for Drona Career Institute
+        * This file simulates a backend database and server functions for a frontend-only demo.
+        * It generates 100 mock students and all associated analytics data.
+        */
+        let mockUsers = [];
+        const MOCK_SUBJECTS = ['Physics', 'Chemistry', 'Mathematics', 'Biology', 'English', 'General Test'];
+
+        function getRandomInt(min, max) {
+            min = Math.ceil(min);
+            max = Math.floor(max);
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function generateMockUsers(count) {
+            let users = [];
+            for (let i = 1; i <= count; i++) {
+                users.push({
+                    user_id: crypto.randomUUID(),
+                    full_name: `Student Name ${i}`,
+                    email: `student${i}@drona.edu`,
+                });
+            }
+            return users;
+        }
+
+        function generateSchoolAnalytics(users) {
+            const subjectPerformance = MOCK_SUBJECTS.map(name => ({
+                name: name,
+                accuracy: getRandomInt(40, 90)
+            })).sort((a, b) => a.accuracy - b.accuracy);
+            const weeklyTrend = [
+                { week: 'Week 1', accuracy: getRandomInt(50, 65) },
+                { week: 'Week 2', accuracy: getRandomInt(55, 70) },
+                { week: 'Week 3', accuracy: getRandomInt(60, 75) },
+                { week: 'Week 4', accuracy: getRandomInt(65, 80) },
+            ];
+            const rankedStudents = users.map(user => ({
+                user_id: user.user_id,
+                full_name: user.full_name,
+                accuracy: getRandomInt(30, 98),
+                total_answered: getRandomInt(50, 500)
+            })).sort((a, b) => b.accuracy - a.accuracy);
+
+            return {
+                school_name: "Drona Career Institute",
+                total_students: users.length,
+                class_overall_accuracy: Math.round(rankedStudents.reduce((acc, s) => acc + s.accuracy, 0) / users.length),
+                class_subject_performance: subjectPerformance,
+                easiest_subject: subjectPerformance[subjectPerformance.length - 1],
+                hardest_subject: subjectPerformance[0],
+                class_weekly_trend: weeklyTrend,
+                ranked_students: rankedStudents
+            };
+        }
+
+        function generateStudentAnalytics(student_id, users) {
+            const user = users.find(u => u.user_id === student_id);
+            if (!user) {
+                return { error: "Student not found" };
+            }
+
+            const detailed_subject_analysis = {};
+            MOCK_SUBJECTS.forEach(subject => {
+                const accuracy = getRandomInt(30, 98);
+                detailed_subject_analysis[subject] = {
+                    accuracy: accuracy,
+                    correct: getRandomInt(10, 50),
+                    total: getRandomInt(50, 100),
+                    topicPerformance: [
+                        { name: `${subject} Topic A`, accuracy: getRandomInt(20, 95) },
+                        { name: `${subject} Topic B`, accuracy: getRandomInt(20, 95) },
+                        { name: `${subject} Topic C`, accuracy: getRandomInt(20, 95) },
+                        { name: `${subject} Topic D`, accuracy: getRandomInt(20, 95) },
+                        { name: `${subject} Topic E`, accuracy: getRandomInt(20, 95) },
+                    ].sort((a, b) => b.accuracy - a.accuracy)
+                };
+            });
+
+            const subjectAccuracies = Object.values(detailed_subject_analysis).sort((a, b) => a.accuracy - b.accuracy);
+            const overallAccuracy = Math.round(subjectAccuracies.reduce((acc, s) => acc + s.accuracy, 0) / subjectAccuracies.length);
+
+            const weekly_trend = [
+                { week: '1', accuracy: getRandomInt(40, 70) },
+                { week: '2', accuracy: getRandomInt(45, 75) },
+                { week: '3', accuracy: getRandomInt(50, 80) },
+                { week: '4', accuracy: getRandomInt(55, 85) },
+            ];
+            const mock_tests = [
+                { subjects: { name: 'Physics' }, completed_at: new Date(Date.now() - 86400000 * 7).toISOString(), score: 35, total_questions: 50, time_taken_seconds: 2700 },
+                { subjects: { name: 'Chemistry' }, completed_at: new Date(Date.now() - 86400000 * 4).toISOString(), score: 42, total_questions: 50, time_taken_seconds: 2900 },
+                { subjects: { name: 'Full Mock Test 1' }, completed_at: new Date(Date.now() - 86400000 * 2).toISOString(), score: 180, total_questions: 250, time_taken_seconds: 9800 },
+            ];
+
+            return {
+                student_name: user.full_name,
+                total_answered: getRandomInt(200, 1000),
+                accuracy: overallAccuracy,
+                strongest_subject: { name: MOCK_SUBJECTS[0], accuracy: subjectAccuracies[subjectAccuracies.length - 1].accuracy },
+                weakest_subject: { name: MOCK_SUBJECTS[2], accuracy: subjectAccuracies[0].accuracy },
+                weekly_trend: weekly_trend,
+                detailed_subject_analysis: detailed_subject_analysis,
+                mock_tests: mock_tests
+            };
+        }
+
+        mockUsers = generateMockUsers(100);
+        let mockSchoolAnalytics = generateSchoolAnalytics(mockUsers); // Use 'let' to make it mutable
+
+        function createMockSupabaseClient() {
+            console.log("Mock Supabase Client Initialized for Drona Career Institute Demo");
+
+            const fakeNetworkDelay = (data, success = true) => {
+                return new Promise((resolve, reject) => {
+                    setTimeout(() => {
+                        if (success) {
+                            resolve({ data: data, error: null });
+                        } else {
+                            reject({ data: null, error: new Error("Mock Supabase Error") });
+                        }
+                    }, 300);
+                });
+            };
+
+            const mockAuth = {
+                session: null,
+                getSession: () => {
+                    console.log("MOCK: getSession()");
+                    return fakeNetworkDelay({ session: mockAuth.session });
+                },
+                signInWithPassword: ({ email, password }) => {
+                    console.log("MOCK: signInWithPassword()");
+                    mockAuth.session = {
+                        user: { id: 'mock-teacher-id', email: email }
+                    };
+                    return fakeNetworkDelay({ user: mockAuth.session.user, session: mockAuth.session });
+                },
+                signOut: () => {
+                    console.log("MOCK: signOut()");
+                    mockAuth.session = null;
+                    return Promise.resolve();
+                }
+            };
+
+            const mockFunctions = {
+                invoke: (functionName, options) => {
+                    console.log(`MOCK: functions.invoke('${functionName}')`);
+                    switch (functionName) {
+                        case 'get-school-analytics':
+                            return fakeNetworkDelay(mockSchoolAnalytics);
+                        case 'get-student-analytics':
+                            const student_id = options?.body?.student_id;
+                            if (!student_id) return fakeNetworkDelay({ error: "No student_id provided" });
+                            const studentData = generateStudentAnalytics(student_id, mockUsers);
+                            return fakeNetworkDelay(studentData);
+                        case 'create-student':
+                            const { name, email } = options.body;
+                            const newUser = { user_id: crypto.randomUUID(), full_name: name, email: email };
+                            mockUsers.push(newUser);
+                            mockSchoolAnalytics = generateSchoolAnalytics(mockUsers); // Regenerate analytics
+                            console.log("MOCK: Added student", newUser);
+                            return fakeNetworkDelay({ success: true, user: newUser });
+                        case 'remove-student':
+                            const { student_id: idToRemove } = options.body;
+                            mockUsers = mockUsers.filter(u => u.user_id !== idToRemove);
+                            mockSchoolAnalytics = generateSchoolAnalytics(mockUsers); // Regenerate analytics
+                            console.log("MOCK: Removed student", idToRemove);
+                            return fakeNetworkDelay({ success: true, student_id: idToRemove });
+                        default:
+                            return fakeNetworkDelay({ error: `Mock function '${functionName}' not implemented.` });
+                    }
+                }
+            };
+
+            const mockFrom = (tableName) => {
+                console.log(`MOCK: from('${tableName}')`);
+                return {
+                    select: (columns) => {
+                        console.log(`MOCK: select('${columns}')`);
+                        return fakeNetworkDelay(mockUsers);
+                    },
+                };
+            };
+
+            return { auth: mockAuth, functions: mockFunctions, from: mockFrom };
+        }
+
+
+        // ===================================================================
+        // ========= PART 2: MAIN APP LOGIC ================================
+        // ===================================================================
+
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- Global State ---
+            const supabaseClient = createMockSupabaseClient();
+            let currentStudentId = null;
+            let currentUserEmail = null;
+            let allStudentsCache = []; // Cache for student list searching
+            let allRankedStudentsCache = []; // Cache for analytics ranking
+            
+            // Chart instances
+            let allCharts = {
+                schoolWeekly: null,
+                subjectRanking: null,
+                studentWeekly: null
+            };
+
+            // --- Page Navigation ---
+            function showPage(pageId) {
+                // Hide all pages
+                document.querySelectorAll('.page-container').forEach(p => p.classList.add('hidden'));
+                
+                // Show the target page
+                const targetPage = document.getElementById(pageId);
+                if (targetPage) {
+                    targetPage.classList.remove('hidden');
+                }
+
+                // Update active nav links
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    if (link.dataset.target === pageId) {
+                        link.classList.add('nav-link-active');
+                        link.classList.remove('text-gray-500', 'font-medium');
+                    } else {
+                        link.classList.remove('nav-link-active');
+                        link.classList.add('text-gray-500', 'font-medium');
+                    }
+                });
+                document.querySelectorAll('.mobile-menu').forEach(m => m.classList.add('hidden'));
+
+
+                // Trigger data loading functions for the specific page
+                switch (pageId) {
+                    case 'dashboard-page':
+                        loadDashboardData();
+                        break;
+                    case 'analytics-page':
+                        loadAnalyticsData();
+                        break;
+                    case 'student-page':
+                        loadStudentAnalysisData();
+                        break;
+                    case 'login-page':
+                        // Clear session-related data on logout
+                        currentStudentId = null;
+                        currentUserEmail = null;
+                        allStudentsCache = [];
+                        allRankedStudentsCache = [];
+                        // Destroy all charts
+                        Object.values(allCharts).forEach(chart => chart?.destroy());
+                        break;
+                }
+            }
+
+            // --- Universal Nav/Menu Handlers ---
+            function initCommonHandlers() {
+                // Handle all navigation links
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const targetPage = e.currentTarget.dataset.target;
+                        showPage(targetPage);
+                    });
+                });
+
+                // Handle all user menu buttons
+                document.querySelectorAll('.user-menu-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        btn.nextElementSibling.classList.toggle('hidden');
+                    });
+                });
+
+                // Handle all mobile menu buttons
+                document.querySelectorAll('.mobile-menu-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        // Find the corresponding mobile menu (e.g., mobile-menu-dash, mobile-menu-analytics)
+                        const menuId = btn.id.replace('btn', 'menu');
+                        document.getElementById(menuId).classList.toggle('hidden');
+                    });
+                });
+                
+                // Handle all logout buttons
+                document.querySelectorAll('.logout-btn').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        await supabaseClient.auth.signOut();
+                        showPage('login-page');
+                    });
+                });
+            }
+
+            // --- Page 1: Login ---
+            function initLoginPage() {
+                const loginForm = document.getElementById('login-form');
+                const errorMessage = document.getElementById('login-error-message');
+                const submitButton = loginForm.querySelector('button[type="submit"]');
+
+                loginForm.addEventListener('submit', async (event) => {
+                    event.preventDefault();
+                    errorMessage.textContent = '';
+                    submitButton.disabled = true;
+                    submitButton.textContent = 'Signing In...';
+
+                    const email = loginForm.email.value;
+                    const password = loginForm.password.value;
+
+                    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+                    if (error) {
+                        errorMessage.textContent = error.message;
+                        submitButton.disabled = false;
+                        submitButton.textContent = 'Sign In';
+                    } else {
+                        // Success
+                        currentUserEmail = data.user.email;
+                        // Update email in all dropdowns
+                        document.querySelectorAll('.user-email-dropdown').forEach(el => el.textContent = currentUserEmail);
+                        document.querySelectorAll('.mobile-user-email').forEach(el => el.textContent = currentUserEmail);
+                        
+                        showPage('dashboard-page');
+                        submitButton.disabled = false;
+                        submitButton.textContent = 'Sign In';
+                        loginForm.reset();
+                    }
+                });
+            }
+
+            // --- Page 2: Dashboard ---
+            const dashboardElems = {
+                schoolNameHeader: document.getElementById('school-name-header-dash'),
+                studentListBody: document.getElementById('student-list-body'),
+                studentListCards: document.getElementById('student-list-cards'),
+                studentSearchBar: document.getElementById('student-search-bar'),
+                noResultsDiv: document.getElementById('no-results'),
+                addStudentModal: document.getElementById('add-student-modal'),
+                addStudentBtn: document.getElementById('add-student-btn'),
+                cancelAddStudentBtn: document.getElementById('cancel-add-student'),
+                addStudentForm: document.getElementById('add-student-form'),
+                modalErrorMessage: document.getElementById('modal-error-message'),
+                submitAddStudentBtn: document.getElementById('submit-add-student'),
+                dashboardContent: document.getElementById('dashboard-content')
+            };
+
+            function initDashboardPage() {
+                dashboardElems.addStudentBtn.addEventListener('click', () => dashboardElems.addStudentModal.classList.remove('hidden'));
+                dashboardElems.cancelAddStudentBtn.addEventListener('click', () => {
+                    dashboardElems.addStudentModal.classList.add('hidden');
+                    dashboardElems.addStudentForm.reset();
+                    dashboardElems.modalErrorMessage.textContent = '';
+                });
+
+                dashboardElems.addStudentForm.addEventListener('submit', async (event) => {
+                    event.preventDefault();
+                    dashboardElems.modalErrorMessage.textContent = '';
+                    dashboardElems.submitAddStudentBtn.disabled = true;
+                    dashboardElems.submitAddStudentBtn.textContent = 'Creating...';
+
+                    const name = document.getElementById('student-name').value;
+                    const email = document.getElementById('student-email').value;
+                    const password = document.getElementById('student-password').value;
+
+                    try {
+                        const { data, error } = await supabaseClient.functions.invoke('create-student', { body: { name, email, password } });
+                        if (error) throw error;
+                        if (data.error) throw new Error(data.error);
+                        
+                        dashboardElems.addStudentModal.classList.add('hidden');
+                        dashboardElems.addStudentForm.reset();
+                        await loadDashboardData(); // Reload student list
+                    } catch (error) {
+                        dashboardElems.modalErrorMessage.textContent = `Error: ${error.message}`;
+                    } finally {
+                        dashboardElems.submitAddStudentBtn.disabled = false;
+                        dashboardElems.submitAddStudentBtn.textContent = 'Create Account';
+                    }
+                });
+
+                dashboardElems.studentSearchBar.addEventListener('input', (e) => {
+                    const searchTerm = e.target.value.toLowerCase();
+                    const filteredStudents = allStudentsCache.filter(student =>
+                        student.full_name.toLowerCase().includes(searchTerm) ||
+                        student.email.toLowerCase().includes(searchTerm)
+                    );
+                    renderStudentList(filteredStudents);
+                });
+                
+                // Event delegation for student links and remove buttons
+                dashboardElems.dashboardContent.addEventListener('click', async (event) => {
+                    const studentLink = event.target.closest('.student-link');
+                    const removeBtn = event.target.closest('.remove-student-btn');
+
+                    if (studentLink) {
+                        event.preventDefault();
+                        currentStudentId = studentLink.dataset.studentId;
+                        showPage('student-page');
+                    }
+                    
+                    if (removeBtn) {
+                        const studentId = removeBtn.dataset.studentId;
+                        const studentName = removeBtn.dataset.studentName;
+                        if (window.confirm(`Are you sure you want to remove "${studentName}"?`)) {
+                            removeBtn.disabled = true;
+                            removeBtn.textContent = 'Removing...';
+                            try {
+                                await supabaseClient.functions.invoke('remove-student', { body: { student_id: studentId } });
+                                await loadDashboardData(); // Reload list
+                            } catch (error) {
+                                alert(`Failed to remove student: ${error.message}`);
+                                removeBtn.disabled = false;
+                                removeBtn.textContent = 'Remove';
+                            }
+                        }
+                    }
+                });
+            }
+
+            async function loadDashboardData() {
+                // In a real app, you might fetch school name here too
+                dashboardElems.schoolNameHeader.textContent = "Drona Career Institute";
+                
+                const { data: students, error } = await supabaseClient.from('mock_students').select('*');
+                if (error) {
+                    dashboardElems.studentListBody.innerHTML = `<tr><td colspan="3" class="text-center p-6 text-red-500">Could not load student data.</td></tr>`;
+                    dashboardElems.studentListCards.innerHTML = `<div class="p-6 text-center text-red-500">Could not load student data.</div>`;
+                    return;
+                }
+                allStudentsCache = students; // Cache for searching
+                renderStudentList(students);
+            }
+
+            function renderStudentList(students) {
+                if (students.length === 0) {
+                    const emptyHtml = `<tr><td colspan="3" class="text-center p-6 text-gray-500">No students found.</td></tr>`;
+                    dashboardElems.studentListBody.innerHTML = emptyHtml;
+                    dashboardElems.studentListCards.innerHTML = `<div class="p-6 text-center text-gray-500">No students found.</div>`;
+                    dashboardElems.noResultsDiv.classList.toggle('hidden', allStudentsCache.length === 0);
+                    return;
+                }
+                
+                dashboardElems.studentListBody.innerHTML = students.map(student => `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <a href="#" class="student-link text-sm font-medium text-gray-900 hover:text-blue-600" data-student-id="${student.user_id}">${student.full_name}</a>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${student.email}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button data-student-id="${student.user_id}" data-student-name="${student.full_name}" class="remove-student-btn text-red-600 hover:text-red-900">Remove</button>
+                        </td>
+                    </tr>`).join('');
+
+                dashboardElems.studentListCards.innerHTML = students.map(student => `
+                    <div class="p-4 flex justify-between items-center">
+                        <div>
+                            <a href="#" class="student-link text-sm font-medium text-gray-900 hover:text-blue-600" data-student-id="${student.user_id}">${student.full_name}</a>
+                            <p class="text-sm text-gray-500">${student.email}</p>
+                        </div>
+                        <button data-student-id="${student.user_id}" data-student-name="${student.full_name}" class="remove-student-btn text-red-600 hover:text-red-900 text-sm font-medium px-2">Remove</button>
+                    </div>`).join('');
+                
+                dashboardElems.noResultsDiv.classList.toggle('hidden', students.length > 0);
+            }
+
+            // --- Page 3: Analytics ---
+            const analyticsElems = {
+                loadingView: document.getElementById('loading-view-analytics'),
+                contentView: document.getElementById('analytics-content'),
+                schoolNameHeader: document.getElementById('school-name-header-analytics'),
+                totalStudents: document.getElementById('total-students'),
+                classAccuracy: document.getElementById('class-accuracy'),
+                easiestSubject: document.getElementById('easiest-subject'),
+                hardestSubject: document.getElementById('hardest-subject'),
+                weeklyTrendCtx: document.getElementById('weeklyTrendChart').getContext('2d'),
+                subjectRankingCtx: document.getElementById('subjectRankingChart').getContext('2d'),
+                tabButtons: document.getElementById('analytics-tab-buttons'),
+                rankingTableContainer: document.getElementById('full-ranking-table')
+            };
+
+            function initAnalyticsPage() {
+                analyticsElems.tabButtons.addEventListener('click', (e) => {
+                    const btn = e.target.closest('.tab-btn');
+                    if (!btn) return;
+
+                    analyticsElems.tabButtons.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    renderRankingTable(btn.dataset.tab);
+                });
+
+                // Handle clicks on ranked students
+                analyticsElems.rankingTableContainer.addEventListener('click', (e) => {
+                    const studentLink = e.target.closest('.student-link');
+                    if (studentLink) {
+                        e.preventDefault();
+                        currentStudentId = studentLink.dataset.studentId;
+                        showPage('student-page');
+                    }
+                });
+            }
+
+            async function loadAnalyticsData() {
+                analyticsElems.loadingView.classList.remove('hidden');
+                analyticsElems.contentView.classList.add('hidden');
+                
+                try {
+                    const { data, error } = await supabaseClient.functions.invoke('get-school-analytics');
+                    if (error) throw error;
+                    if (data.error) throw new Error(data.error);
+
+                    analyticsElems.schoolNameHeader.textContent = data.school_name || 'School';
+                    if (data.ranked_students.length === 0) {
+                        analyticsElems.contentView.innerHTML = '<div class="text-center p-12 bg-white rounded-lg shadow-md"><h2 class="text-xl font-semibold">No Student Data</h2></div>';
+                        return;
+                    }
+                    
+                    allRankedStudentsCache = data.ranked_students;
+                    renderAnalyticsInsights(data);
+                    renderAnalyticsCharts(data);
+                    
+                    // Activate the first tab and render table
+                    analyticsElems.tabButtons.querySelector('.tab-btn').classList.add('active');
+                    renderRankingTable('full');
+
+                } catch (error) {
+                    analyticsElems.contentView.innerHTML = `<div class="text-center p-12 bg-white rounded-lg shadow-md"><h2 class="text-2xl font-bold text-red-600">Could Not Load Analytics</h2><p class="text-gray-600 mt-2">${error.message}</p></div>`;
+                } finally {
+                    analyticsElems.loadingView.classList.add('hidden');
+                    analyticsElems.contentView.classList.remove('hidden');
+                }
+            }
+
+            function renderAnalyticsInsights(data) {
+                analyticsElems.totalStudents.textContent = data.total_students;
+                analyticsElems.classAccuracy.textContent = `${data.class_overall_accuracy}%`;
+                if (data.class_subject_performance.length > 0) {
+                    const subjects = data.class_subject_performance;
+                    analyticsElems.easiestSubject.textContent = `${subjects[subjects.length - 1].name} (${subjects[subjects.length - 1].accuracy}%)`;
+                    analyticsElems.hardestSubject.textContent = `${subjects[0].name} (${subjects[0].accuracy}%)`;
+                }
+            }
+            
+            function renderAnalyticsCharts(data) {
+                if(allCharts.schoolWeekly) allCharts.schoolWeekly.destroy();
+                if(allCharts.subjectRanking) allCharts.subjectRanking.destroy();
+
+                allCharts.schoolWeekly = new Chart(analyticsElems.weeklyTrendCtx, {
+                    type: 'line',
+                    data: { labels: data.class_weekly_trend.map(d => d.week), datasets: [{ label: 'Accuracy %', data: data.class_weekly_trend.map(d => d.accuracy), borderColor: 'rgba(0, 122, 255, 1)', backgroundColor: 'rgba(0, 122, 255, 0.1)', fill: true, tension: 0.3 }] },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } } }
+                });
+
+                allCharts.subjectRanking = new Chart(analyticsElems.subjectRankingCtx, {
+                    type: 'bar',
+                    data: { 
+                        labels: data.class_subject_performance.map(s => s.name), 
+                        datasets: [{ 
+                            label: 'Class Accuracy %', 
+                            data: data.class_subject_performance.map(s => s.accuracy),
+                            backgroundColor: data.class_subject_performance.map(s => s.accuracy >= 75 ? '#10B981' : s.accuracy >= 40 ? '#F59E0B' : '#EF4444')
+                        }] 
+                    },
+                    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, scales: { x: { beginAtZero: true, max: 100 } }, plugins: { legend: { display: false } } }
+                });
+            }
+
+            function renderRankingTable(tab) {
+                let studentsToShow = [];
+                if (tab === 'full') studentsToShow = allRankedStudentsCache;
+                else if (tab === 'top') studentsToShow = allRankedStudentsCache.slice(0, 10);
+                else if (tab === 'watch') studentsToShow = allRankedStudentsCache.slice(-10).reverse();
+                
+                analyticsElems.rankingTableContainer.innerHTML = `
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rank</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Student Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Accuracy</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Answered</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                           ${studentsToShow.map((student) => {
+                                const rank = allRankedStudentsCache.findIndex(s => s.user_id === student.user_id) + 1;
+                                const accuracyColor = student.accuracy >= 75 ? 'text-green-600' : student.accuracy >= 40 ? 'text-yellow-600' : 'text-red-600';
+                                return `
+                                <tr class="hover:bg-gray-100">
+                                    <td class="px-6 py-4 font-bold text-gray-700">${rank}</td>
+                                    <td class="px-6 py-4"><a href="#" class="student-link text-sm font-medium text-blue-600 hover:underline" data-student-id="${student.user_id}">${student.full_name}</a></td>
+                                    <td class="px-6 py-4 text-sm font-semibold ${accuracyColor}">${student.accuracy}%</td>
+                                    <td class="px-6 py-4 text-sm text-gray-500">${student.total_answered}</td>
+                                </tr>`;
+                            }).join('')}
+                        </tbody>
+                    </table>`;
+            }
+
+            // --- Page 4: Student Analysis ---
+            const studentElems = {
+                loadingView: document.getElementById('loading-view-student'),
+                contentView: document.getElementById('student-analysis-content'),
+                errorView: document.getElementById('student-error-content'),
+                studentNameHeader: document.getElementById('student-name-header'),
+                totalAnswered: document.getElementById('total-answered'),
+                accuracy: document.getElementById('accuracy'),
+                strongestSubject: document.getElementById('strongest-subject'),
+                weakestSubject: document.getElementById('weakest-subject'),
+                weeklyTrendCtx: document.getElementById('studentWeeklyTrendChart').getContext('2d'),
+                subjectTabsContainer: document.getElementById('subject-tabs-container'),
+                subjectDetailsContainer: document.getElementById('subject-details-container'),
+                mockTestsContainer: document.getElementById('mock-tests-container')
+            };
+
+            function initStudentPage() {
+                // Event delegation for subject tabs
+                studentElems.subjectTabsContainer.addEventListener('click', (e) => {
+                    const btn = e.target.closest('.tab-btn');
+                    if (btn) {
+                        // This logic is simple, so we can keep it here.
+                        // The actual rendering will be handled by loadStudentAnalysisData
+                        // We just need to re-call it with the new tab context.
+                        // For this demo, the data is static, so we'll just handle the click visuals.
+                        // A better way: store the full data object globally and re-render details.
+                        
+                        // Let's just store the full analysis data
+                        const subjectName = btn.dataset.subject;
+                        if (window.currentStudentAnalysisData) {
+                             renderStudentSubjectDetails(subjectName, window.currentStudentAnalysisData[subjectName]);
+                             studentElems.subjectTabsContainer.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                             btn.classList.add('active');
+                        }
+                    }
+                });
+            }
+            
+            function showStudentError(message) {
+                studentElems.errorView.innerHTML = `<div class="text-center p-12 bg-white rounded-lg shadow-md"><h2 class="text-2xl font-bold text-red-600">Could Not Load Analysis</h2><p class="text-gray-600 mt-2">${message}</p></div>`;
+                studentElems.loadingView.classList.add('hidden');
+                studentElems.contentView.classList.add('hidden');
+                studentElems.errorView.classList.remove('hidden');
+            }
+
+            async function loadStudentAnalysisData() {
+                if (!currentStudentId) {
+                    showStudentError("No student has been selected. Please go back to the dashboard and choose a student.");
+                    return;
+                }
+                
+                studentElems.loadingView.classList.remove('hidden');
+                studentElems.contentView.classList.add('hidden');
+                studentElems.errorView.classList.add('hidden');
+                
+                try {
+                    const { data, error } = await supabaseClient.functions.invoke('get-student-analytics', { body: { student_id: currentStudentId } });
+                    if (error) throw error;
+                    if (data.error) throw new Error(data.error);
+
+                    window.currentStudentAnalysisData = data.detailed_subject_analysis; // Store for tab clicks
+                    renderStudentAnalysis(data);
+                    
+                } catch (error) {
+                    showStudentError(error.message);
+                } finally {
+                    studentElems.loadingView.classList.add('hidden');
+                    studentElems.contentView.classList.remove('hidden');
+                }
+            }
+            
+            function renderStudentAnalysis(data) {
+                studentElems.studentNameHeader.textContent = data.student_name;
+                studentElems.totalAnswered.textContent = data.total_answered;
+                studentElems.accuracy.textContent = `${data.accuracy}%`;
+                if (data.strongest_subject) studentElems.strongestSubject.innerHTML = `${data.strongest_subject.name} <span class="text-base text-gray-500 font-medium">(${data.strongest_subject.accuracy}%)</span>`;
+                if (data.weakest_subject) studentElems.weakestSubject.innerHTML = `${data.weakest_subject.name} <span class="text-base text-gray-500 font-medium">(${data.weakest_subject.accuracy}%)</span>`;
+
+                renderStudentWeeklyTrend(data.weekly_trend || []);
+                renderStudentSubjectTabs(data.detailed_subject_analysis || {});
+                renderStudentMockTests(data.mock_tests || []);
+            }
+            
+            function renderStudentWeeklyTrend(trendData) {
+                if (allCharts.studentWeekly) allCharts.studentWeekly.destroy();
+                if (trendData.length === 0) {
+                    studentElems.weeklyTrendCtx.canvas.parentElement.innerHTML = '<p class="text-center text-gray-500 py-10">Not enough data for a weekly trend.</p>';
+                    return;
+                }
+                allCharts.studentWeekly = new Chart(studentElems.weeklyTrendCtx, {
+                    type: 'line',
+                    data: { labels: trendData.map(d => `Week ${d.week}`), datasets: [{ label: 'Accuracy %', data: trendData.map(d => d.accuracy), borderColor: 'rgba(0, 122, 255, 1)', backgroundColor: 'rgba(0, 122, 255, 0.1)', fill: true, tension: 0.3 }] },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } } }
+                });
+            }
+            
+            function renderStudentSubjectTabs(subjectAnalysis) {
+                const subjectNames = Object.keys(subjectAnalysis);
+                if (subjectNames.length === 0) {
+                    studentElems.subjectTabsContainer.innerHTML = '<p class="text-gray-500 text-sm">No subject data.</p>';
+                    studentElems.subjectDetailsContainer.innerHTML = '';
+                    return;
+                }
+                studentElems.subjectTabsContainer.innerHTML = subjectNames.map(name => 
+                    `<button class="tab-btn w-full text-left px-4 py-2 font-semibold rounded-lg text-gray-700 hover:bg-gray-200 transition-colors" data-subject="${name}">${name}</button>`
+                ).join('');
+                
+                // Click the first tab
+                const firstTab = studentElems.subjectTabsContainer.querySelector('.tab-btn');
+                if (firstTab) {
+                    firstTab.classList.add('active');
+                    renderStudentSubjectDetails(firstTab.dataset.subject, subjectAnalysis[firstTab.dataset.subject]);
+                }
+            }
+
+            function renderStudentSubjectDetails(subjectName, details) {
+                 details.topicPerformance.sort((a, b) => b.accuracy - a.accuracy);
+                 const strongest = details.topicPerformance.slice(0, 5);
+                 const weakest = [...details.topicPerformance].reverse().slice(0, 5);
+                 studentElems.subjectDetailsContainer.innerHTML = `
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">${subjectName} - Details</h3>
+                    <div class="mb-6">
+                        <div class="flex justify-between items-center mb-1"><span class="font-semibold">Subject Accuracy</span><span>${details.accuracy}% (${details.correct}/${details.total})</span></div>
+                         <div class="w-full bg-gray-200 rounded-full h-2.5"><div class="${details.accuracy >= 75 ? 'bg-green-500' : details.accuracy >= 40 ? 'bg-yellow-500' : 'bg-red-500'} h-2.5 rounded-full" style="width: ${details.accuracy}%"></div></div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div><h4 class="font-semibold mb-3">Strongest Topics</h4><div class="space-y-2">${renderTopicList(strongest)}</div></div>
+                         <div><h4 class="font-semibold mb-3">Weakest Topics</h4><div class="space-y-2">${renderTopicList(weakest)}</div></div>
+                    </div>`;
+            }
+
+            function renderTopicList(topics) {
+                if (topics.length === 0) return '<p class="text-sm text-gray-500">Not enough topic data.</p>';
+                return topics.map(topic => {
+                    const accuracyColor = topic.accuracy >= 75 ? 'text-green-600' : topic.accuracy >= 40 ? 'text-yellow-600' : 'text-red-600';
+                    return `<div class="text-sm"><div class="flex justify-between"><p class="text-gray-700">${topic.name}</p><p class="font-semibold ${accuracyColor}">${topic.accuracy}%</p></div></div>`
+                }).join('');
+            }
+            
+            function renderStudentMockTests(tests) {
+                if (tests.length === 0) {
+                    studentElems.mockTestsContainer.innerHTML = `<p class="text-center text-gray-500 py-4">This student has not completed any mock tests.</p>`;
+                    return;
+                }
+                const formatTime = (seconds) => {
+                    if (seconds === null || isNaN(seconds)) return 'N/A';
+                    return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+                };
+                studentElems.mockTestsContainer.innerHTML = `
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Subject</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Score</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Accuracy</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            ${tests.map(test => {
+                                const accuracy = test.total_questions > 0 ? Math.round((test.score / test.total_questions) * 100) : 0;
+                                return `<tr class="hover:bg-gray-50">
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-800">${test.subjects.name}</td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">${new Date(test.completed_at).toLocaleDateString()}</td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-800">${test.score}/${test.total_questions}</td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold ${accuracy >= 75 ? 'text-green-600' : accuracy >= 40 ? 'text-yellow-600' : 'text-red-600'}">${accuracy}%</td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">${formatTime(test.time_taken_seconds)}</td>
+                                </tr>`;
+                            }).join('')}
+                        </tbody>
+                    </table>`;
+            }
+
+            // --- App Initialization ---
+            initCommonHandlers();
+            initLoginPage();
+            initDashboardPage();
+            initAnalyticsPage();
+            initStudentPage();
+            
+            // Check for existing session on load
+            supabaseClient.auth.getSession().then(({ data: { session } }) => {
+                if (session) {
+                    currentUserEmail = session.user.email;
+                    document.querySelectorAll('.user-email-dropdown').forEach(el => el.textContent = currentUserEmail);
+                    document.querySelectorAll('.mobile-user-email').forEach(el => el.textContent = currentUserEmail);
+                    showPage('dashboard-page');
+                } else {
+                    showPage('login-page');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+
