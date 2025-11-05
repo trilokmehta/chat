@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Data Converter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Added SheetJS library for Excel export (used by both) -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        :focus-visible {
+            outline: 2px solid theme('colors.blue.500');
+            outline-offset: 2px;
+        }
+
+        /* --- Tab Navigation Styles --- */
+        .tab-button {
+            padding: 0.75rem 1.25rem;
+            font-weight: 600;
+            color: theme('colors.slate.500');
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s ease-in-out;
+        }
+        .dark .tab-button {
+            color: theme('colors.slate.400');
+        }
+        .tab-button:hover {
+            background-color: theme('colors.slate.100');
+        }
+        .dark .tab-button:hover {
+            background-color: theme('colors.slate.800');
+        }
+        .tab-button.active {
+            color: theme('colors.blue.600');
+            border-bottom-color: theme('colors.blue.600');
+        }
+        .dark .tab-button.active {
+            color: theme('colors.blue.300');
+            border-bottom-color: theme('colors.blue.300');
+        }
+
+        /* --- Preview Container Styles (Spreadsheet Theme) --- */
+        .preview-container {
+            width: 100%;
+            overflow: auto; /* Use auto for both x and y */
+            border: 1px solid theme('colors.slate.200');
+            /* dark:border-color: theme('colors.slate.700'); */ /* REMOVED - Incorrect CSS syntax */
+            border-radius: 0.5rem; /* rounded-lg */
+            max-height: 50vh; /* Limit height */
+            background-color: theme('colors.white');
+            /* dark:background-color: theme('colors.slate.800'); */ /* REMOVED - Incorrect CSS syntax */
+        }
+        /* ADDED for dark mode fix */
+        .dark .preview-container {
+            border-color: theme('colors.slate.700');
+            background-color: theme('colors.slate.800');
+        }
+        .preview-container::-webkit-scrollbar {
+            width: 0.5em;
+            height: 0.5em;
+        }
+        .preview-container::-webkit-scrollbar-thumb {
+            background-color: theme('colors.slate.300');
+            border-radius: 4px;
+        }
+        .dark .preview-container::-webkit-scrollbar-thumb {
+            background-color: theme('colors.slate.600');
+        }
+        .preview-container {
+            -ms-overflow-style: none; /* IE and Edge */
+            scrollbar-width: thin; /* Firefox */
+            scrollbar-color: theme('colors.slate.300') transparent;
+        }
+        .dark .preview-container {
+             scrollbar-color: theme('colors.slate.600') transparent;
+        }
+        #text_previewTable, #json_previewTable {
+            border-collapse: separate;
+            border-spacing: 0;
+            table-layout: fixed;
+            width: 100%;
+        }
+
+        /* --- Table Header (Spreadsheet Theme) --- */
+        /* REMOVED the #text_previewTable th, #json_previewTable th styles.
+           They are now applied directly in JavaScript for reliability. */
+
+        /* --- Editable Cell Styles (Spreadsheet Theme) --- */
+        .editable-cell {
+            padding: 0.5rem 0.75rem; /* p-2 px-3 */
+            border-bottom: 1px solid theme('colors.slate.200');
+            /* dark:border-bottom-color: theme('colors.slate.700'); */ /* REMOVED - Incorrect CSS syntax */
+            border-right: 1px solid theme('colors.slate.200');
+            /* dark:border-right-color: theme('colors.slate.700'); */ /* REMOVED - Incorrect CSS syntax */
+            white-space: nowrap;
+            overflow: hidden;
+            text-ellipsis: ellipsis;
+            max-width: 280px;
+            cursor: text;
+            transition: background-color 0.15s ease-in-out;
+            font-size: 0.875rem; /* text-sm */
+            color: theme('colors.slate.700');
+            /* dark:color: theme('colors.slate.200'); */ /* REMOVED - Incorrect CSS syntax */
+        }
+        /* ADDED for dark mode fix */
+        .dark .editable-cell {
+            border-bottom-color: theme('colors.slate.700');
+            border-right-color: theme('colors.slate.700');
+            color: theme('colors.slate.200');
+        }
+        .editable-cell:last-child {
+            border-right: 0;
+        }
+        #text_previewTable tbody tr:last-child .editable-cell,
+        #json_previewTable tbody tr:last-child .editable-cell {
+            border-bottom: 0; /* No bottom border on last row */
+        }
+        #text_previewTable tbody tr:hover .editable-cell,
+        #json_previewTable tbody tr:hover .editable-cell {
+            background-color: theme('colors.slate.50');
+        }
+        .dark #text_previewTable tbody tr:hover .editable-cell,
+        .dark #json_previewTable tbody tr:hover .editable-cell {
+            background-color: theme('colors.slate.900');
+        }
+
+        .editable-cell:focus {
+            outline: 2px solid theme('colors.blue.500');
+            outline-offset: -1px; /* Draw outline inside the cell */
+            background-color: theme('colors.blue.50');
+            /* dark:background-color: theme('colors.slate.900'); */ /* REMOVED - Incorrect CSS syntax */
+            white-space: normal;
+            overflow: visible;
+            cursor: auto;
+            z-index: 5;
+            position: relative;
+        }
+        /* ADDED for dark mode fix */
+        .dark .editable-cell:focus {
+            background-color: theme('colors.slate.900');
+        }
+
+        /* --- Drag-Active Styles --- */
+        .drag-active {
+            border-color: theme('colors.blue.500') !important; /* Use !important to override */
+            background-color: theme('colors.blue.50');
+            box-shadow: 0 0 0 2px theme('colors.blue.500');
+        }
+        .dark .drag-active {
+            border-color: theme('colors.blue.400') !important;
+            background-color: rgba(59, 130, 246, 0.1);
+            box-shadow: 0 0 0 2px theme('colors.blue.400');
+        }
+
+        /* --- Styled Select (for Data Tools) --- */
+        .form-select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
+        .dark .form-select {
+             background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+        }
+    </style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-900 min-h-screen p-4 transition-colors duration-200">
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 sm:p-8 w-full max-w-7xl mx-auto border border-slate-200 dark:border-slate-700">
+
+        <!-- Header and Tab Navigation -->
+        <h1 class="text-2xl sm:text-3xl font-bold text-slate-800 dark:text-white mb-2">Universal Data Converter</h1>
+        <p class="text-slate-600 dark:text-slate-400 mb-4">Choose your converter, load your data, edit the grid, and export to CSV or Excel.</p>
+        
+        <div class="border-b border-slate-200 dark:border-slate-700 mb-6">
+            <nav class="-mb-px flex space-x-4" aria-label="Tabs">
+                <button id="tab-text" class="tab-button active">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-5 w-5 mr-2 -mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Text to CSV/Excel
+                </button>
+                <button id="tab-json" class="tab-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-5 w-5 mr-2 -mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                    </svg>
+                    JSON to CSV/Excel
+                </button>
+            </nav>
+        </div>
+
+        <!-- ==================================================================== -->
+        <!-- ==                TEXT CONVERTER PAGE (Default Visible)             == -->
+        <!-- ==================================================================== -->
+        <div id="textConverterPage">
+            <h2 class="text-xl font-semibold text-slate-800 dark:text-white mb-4">1. Load Text Data</h2>
+            <!-- Text Input Area -->
+            <div class="mb-6">
+                <label for="text_textInput" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Paste your text or drop a file here:</label>
+                <textarea id="text_textInput" rows="10" class="w-full p-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" placeholder="id: 1question: &quot;What is...&quot;options: [...]...
+id: 2question: &quot;What is...&quot;options: [...]..."></textarea>
+                <p id="text_dropHelper" class="text-sm text-slate-500 dark:text-slate-400 mt-2">You can drag and drop a plain text file (.txt, .md, .csv) here or use the 'Select File' button.</p>
+            </div>
+
+            <!-- Controls -->
+            <h2 class="text-xl font-semibold text-slate-800 dark:text-white mb-4">2. Convert and Edit</h2>
+            <div class="flex flex-col sm:flex-row flex-wrap gap-4 mb-6">
+                <button id="text_selectFileBtn" class="inline-flex items-center justify-center gap-2 w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition-all duration-200 ease-in-out transform hover:-translate-y-0.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    Select File
+                </button>
+                <button id="text_convertBtn" class="inline-flex items-center justify-center gap-2 w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition-all duration-200 ease-in-out transform hover:-translate-y-0.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m-15.357-2a8.001 8.001 0 0015.357 2m0 0H15" />
+                    </svg>
+                    Convert
+                </button>
+                <button id="text_downloadBtn" class="inline-flex items-center justify-center gap-2 w-full sm:w-auto bg-slate-600 hover:bg-slate-700 dark:bg-slate-600 dark:hover:bg-slate-500 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition-all duration-200 ease-in-out transform hover:-translate-y-0.5 hidden">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Download CSV
+                </button>
+                <button id="text_downloadExcelBtn" class="inline-flex items-center justify-center gap-2 w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition-all duration-200 ease-in-out transform hover:-translate-y-0.5 hidden">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                    </svg>
+                    Download Excel (.xlsx)
+                </button>
+            </div>
+
+            <!-- Status Message -->
+            <p id="text_status" class="font-medium mb-4 h-5"></p>
+
+            <!-- Data Tools Section -->
+            <details id="text_dataToolsSection" class="hidden mb-6 border-t border-slate-200 dark:border-slate-700 pt-4">
+                <summary class="text-lg font-semibold text-slate-700 dark:text-slate-200 cursor-pointer">Data Manipulation Tools</summary>
+                <div class="mt-4 p-4 bg-slate-50 dark:bg-slate-900 rounded-lg space-y-6 border border-slate-200 dark:border-slate-700">
+                    <!-- Add/Subtract Tool -->
+                    <div>
+                        <label for="text_addSubtractCol" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Add/Subtract Tool</label>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mb-2">Apply a number operation to a selected column.</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <select id="text_addSubtractCol" class="form-select w-full p-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">
+                            </select>
+                            <input type="number" id="text_addSubtractInput" class="w-full p-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" placeholder="e.g., 1 or -1">
+                            <button id="text_applyAddSubtractBtn" class="sm:col-span-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-all duration-200">Apply</button>
+                        </div>
+                    </div>
+                    <!-- Substitute Tool -->
+                    <div>
+                        <label for="text_substituteCol" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Substitute Tool</label>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mb-2">Find and replace text in a selected column.</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                            <select id="text_substituteCol" class="form-select w-full p-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">
+                            </select>
+                            <input type="text" id="text_findInput" class="w-full p-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" placeholder="Find this">
+                            <input type="text" id="text_replaceInput" class="w-full p-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" placeholder="Replace with this">
+                            <button id="text_applySubstituteBtn" class="sm:col-span-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-all duration-200">Substitute</button>
+                        </div>
+                    </div>
+                </div>
+            </details>
+
+            <!-- CSV Preview -->
+            <div id="text_previewSection" class="hidden">
+                <h3 class="text-lg font-semibold text-slate-700 dark:text-slate-200 mb-3">Editable Data Grid (Click cells to edit)</h3>
+                <div class="preview-container">
+                    <table id="text_previewTable">
+                        <!-- Head and body will be inserted by JS -->
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ==================================================================== -->
+        <!-- ==                   JSON CONVERTER PAGE (Hidden)                 == -->
+        <!-- ==================================================================== -->
+        <div id="jsonConverterPage" class="hidden">
+
+            <h2 class="text-xl font-semibold text-slate-800 dark:text-white mb-4">1. Load JSON File</h2>
+            <!-- File Input / Drop Zone -->
+            <div id="json_dropZone" class="mb-6 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 dark:hover:border-blue-400 transition-all duration-200">
+                <label for="json_jsonFile" class="inline-flex items-center gap-2 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-all duration-200 ease-in-out transform hover:-translate-y-0.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    Select JSON File
+                </label>
+                <input type="file" id="json_jsonFile" class="hidden" accept=".json">
+                <p class="mt-4 text-sm text-slate-500 dark:text-slate-300">...or drag and drop a JSON file here</p>
+                <span id="json_fileName" class="mt-2 block text-slate-500 dark:text-slate-300 font-medium">No file selected</span>
+            </div>
+
+
+            <!-- Controls -->
+            <h2 class="text-xl font-semibold text-slate-800 dark:text-white mb-4">2. Convert and Edit</h2>
+            <div class="flex flex-col sm:flex-row flex-wrap gap-4 mb-6">
+                <button id="json_convertBtn" class="inline-flex items-center justify-center gap-2 w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition-all duration-200 ease-in-out transform hover:-translate-y-0.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m-15.357-2a8.001 8.001 0 0015.357 2m0 0H15" />
+                    </svg>
+                    Convert
+                </button>
+                <button id="json_downloadBtn" class="inline-flex items-center justify-center gap-2 w-full sm:w-auto bg-slate-600 hover:bg-slate-700 dark:bg-slate-600 dark:hover:bg-slate-500 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition-all duration-200 ease-in-out transform hover:-translate-y-0.5 hidden">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Download CSV
+                </button>
+                <!-- Added Excel Download Button -->
+                <button id="json_downloadExcelBtn" class="inline-flex items-center justify-center gap-2 w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition-all duration-200 ease-in-out transform hover:-translate-y-0.5 hidden">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                    </svg>
+                    Download Excel (.xlsx)
+                </button>
+            </div>
+
+            <!-- Status Message -->
+            <p id="json_status" class="font-medium mb-4 h-5"></p>
+
+            <!-- CSV Preview (using new spreadsheet theme) -->
+            <div id="json_previewSection" class="hidden">
+                <h3 class="text-lg font-semibold text-slate-700 dark:text-slate-200 mb-3">Editable Data Grid (Click cells to edit)</h3>
+                <div class="preview-container">
+                    <table id="json_previewTable">
+                        <!-- Head and body will be inserted by JS -->
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Hidden file input for text converter -->
+    <input type="file" id="text_fileInput" class="hidden" accept=".txt,.md,.csv,.json,text/plain">
+
+    <script>
+        // --- Shared Helper Function ---
+        /**
+         * Escapes a value for a CSV cell.
+         */
+        function escapeCSV(value) {
+            if (value === null || value === undefined) {
+                return "";
+            }
+            let str = String(value);
+            return str.replace(/"/g, '""');
+        }
+
+        // --- Tab Navigation Logic ---
+        const tabButtons = {
+            text: document.getElementById('tab-text'),
+            json: document.getElementById('tab-json')
+        };
+        const converterPages = {
+            text: document.getElementById('textConverterPage'),
+            json: document.getElementById('jsonConverterPage')
+        };
+
+        function switchTab(tabName) {
+            // Hide all pages
+            Object.values(converterPages).forEach(page => page.classList.add('hidden'));
+            // Deactivate all buttons
+            Object.values(tabButtons).forEach(btn => btn.classList.remove('active'));
+
+            // Show selected page
+            converterPages[tabName].classList.remove('hidden');
+            // Activate selected button
+            tabButtons[tabName].classList.add('active');
+        }
+        
+        tabButtons.text.addEventListener('click', () => switchTab('text'));
+        tabButtons.json.addEventListener('click', () => switchTab('json'));
+        // --- End Tab Logic ---
+
+
+        // ====================================================================
+        // ==                 TEXT CONVERTER JAVASCRIPT                    ==
+        // ====================================================================
+        (function() {
+            const textInput = document.getElementById('text_textInput');
+            const convertBtn = document.getElementById('text_convertBtn');
+            const downloadBtn = document.getElementById('text_downloadBtn');
+            const downloadExcelBtn = document.getElementById('text_downloadExcelBtn');
+            const statusEl = document.getElementById('text_status');
+            const previewSection = document.getElementById('text_previewSection');
+            const previewTable = document.getElementById('text_previewTable');
+            const selectFileBtn = document.getElementById('text_selectFileBtn');
+            const fileInput = document.getElementById('text_fileInput');
+            const dataToolsSection = document.getElementById('text_dataToolsSection');
+            const addSubtractInput = document.getElementById('text_addSubtractInput');
+            const applyAddSubtractBtn = document.getElementById('text_applyAddSubtractBtn');
+            const addSubtractCol = document.getElementById('text_addSubtractCol');
+            const findInput = document.getElementById('text_findInput');
+            const replaceInput = document.getElementById('text_replaceInput');
+            const applySubstituteBtn = document.getElementById('text_applySubstituteBtn');
+            const substituteCol = document.getElementById('text_substituteCol');
+
+            let originalFileName = 'converted_data';
+            let currentHeaders = [];
+
+            convertBtn.addEventListener('click', () => {
+                let text = textInput.value;
+                if (!text.trim()) {
+                    statusEl.textContent = 'Please paste or load text first.';
+                    statusEl.className = 'font-medium mb-4 h-5 text-red-500 dark:text-red-300';
+                    return;
+                }
+
+                try {
+                    text = text.replace(/________________________________________/g, "");
+                    const blocks = text.split(/(?=id:)/);
+                    const processedLines = [];
+                    for (const block of blocks) {
+                        if (!block.trim()) continue;
+                        const singleLineBlock = block.replace(/(\r\n|\n|\r)/gm, " ").replace(/\s+/g, ' ').trim();
+                        processedLines.push(singleLineBlock);
+                    }
+
+                    const parsedData = processedLines.map(normalizeLine).filter(item => item !== null);
+
+                    if (parsedData.length === 0) {
+                        throw new Error('No valid data found. Ensure text starts with "id:".');
+                    }
+
+                    const headers = ["id", "question", "options", "topic", "difficulty", "explanation", "tags", "answer"];
+                    currentHeaders = headers;
+                    
+                    displayPreview(parsedData, headers);
+                    populateColumnDropdowns(headers);
+
+                    downloadBtn.classList.remove('hidden');
+                    downloadExcelBtn.classList.remove('hidden');
+                    dataToolsSection.classList.remove('hidden');
+                    
+                    statusEl.textContent = `Successfully converted ${parsedData.length} items. You can edit the grid below.`;
+                    statusEl.className = 'font-medium mb-4 h-5 text-green-600 dark:text-green-300';
+                    
+                    if (!originalFileName) {
+                        originalFileName = 'converted_text';
+                    }
+
+                } catch (error) {
+                    statusEl.textContent = `Error: ${error.message}`;
+                    statusEl.className = 'font-medium mb-4 h-5 text-red-500 dark:text-red-300';
+                    previewSection.classList.add('hidden');
+                    downloadBtn.classList.add('hidden');
+                    downloadExcelBtn.classList.add('hidden');
+                    dataToolsSection.classList.add('hidden');
+                    currentHeaders = [];
+                }
+            });
+
+            function getDataFromTable() {
+                const data = [];
+                const tableHeaders = [];
+                
+                previewTable.querySelectorAll('thead th').forEach(th => {
+                    tableHeaders.push(th.textContent.toLowerCase());
+                });
+
+                previewTable.querySelectorAll('tbody tr').forEach(tr => {
+                    const item = {};
+                    tr.querySelectorAll('td').forEach((td, index) => {
+                        const header = tableHeaders[index];
+                        item[header] = td.textContent;
+                    });
+                    data.push(item);
+                });
+                return data;
+            }
+
+            downloadBtn.addEventListener('click', () => {
+                try {
+                    const editedData = getDataFromTable();
+                    if (editedData.length === 0) throw new Error("No data in the table to download.");
+                    
+                    const newCsvData = convertToCSV(editedData, currentHeaders);
+                    const blob = new Blob([newCsvData], { type: 'text/csv;charset=utf-8;' });
+                    const link = document.createElement('a');
+                    const url = URL.createObjectURL(blob);
+                    
+                    const downloadName = originalFileName.includes('.') 
+                        ? originalFileName.substring(0, originalFileName.lastIndexOf('.')) + '.csv' 
+                        : originalFileName + '.csv';
+
+                    link.setAttribute('href', url);
+                    link.setAttribute('download', downloadName);
+                    link.style.visibility = 'hidden';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+
+                } catch (error) {
+                    statusEl.textContent = `Error downloading CSV: ${error.message}`;
+                    statusEl.className = 'font-medium mb-4 h-5 text-red-500 dark:text-red-300';
+                }
+            });
+
+            downloadExcelBtn.addEventListener('click', () => {
+                 try {
+                    const editedData = getDataFromTable();
+                    if (editedData.length === 0) throw new Error("No data in the table to download.");
+
+                    const downloadName = originalFileName.includes('.') 
+                        ? originalFileName.substring(0, originalFileName.lastIndexOf('.')) + '.xlsx' 
+                        : originalFileName + '.xlsx';
+
+                    const wb = XLSX.utils.book_new();
+                    const ws = XLSX.utils.json_to_sheet(editedData, { header: currentHeaders });
+                    XLSX.utils.book_append_sheet(wb, ws, 'Data');
+                    XLSX.writeFile(wb, downloadName);
+
+                    statusEl.textContent = `Successfully exported ${editedData.length} items to Excel.`;
+                    statusEl.className = 'font-medium mb-4 h-5 text-green-600 dark:text-green-300';
+
+                } catch (error)
+ {
+                    statusEl.textContent = `Error exporting Excel: ${error.message}`;
+                    statusEl.className = 'font-medium mb-4 h-5 text-red-500 dark:text-red-300';
+                }
+            });
+
+            function populateColumnDropdowns(headers) {
+                addSubtractCol.innerHTML = '';
+                substituteCol.innerHTML = '';
+                headers.forEach(header => {
+                    const option1 = document.createElement('option');
+                    option1.value = header;
+                    option1.textContent = header.charAt(0).toUpperCase() + header.slice(1);
+                    addSubtractCol.appendChild(option1);
+
+                    const option2 = document.createElement('option');
+                    option2.value = header;
+                    option2.textContent = header.charAt(0).toUpperCase() + header.slice(1);
+                    substituteCol.appendChild(option2);
+                });
+                if (headers.includes('answer')) {
+                    addSubtractCol.value = 'answer';
+                    substituteCol.value = 'answer';
+                }
+            }
+
+            function findColumnIndex(columnName) {
+                let colIndex = -1;
+                previewTable.querySelectorAll('thead th').forEach((th, index) => {
+                    if (th.textContent.toLowerCase() === columnName.toLowerCase()) {
+                        colIndex = index;
+                    }
+                });
+                return colIndex;
+            }
+
+            applyAddSubtractBtn.addEventListener('click', () => {
+                const valueToAdd = parseInt(addSubtractInput.value, 10);
+                if (isNaN(valueToAdd)) {
+                    statusEl.textContent = "Please enter a valid number to add/subtract.";
+                    statusEl.className = 'font-medium mb-4 h-5 text-red-500 dark:text-red-300';
+                    return;
+                }
+                const selectedColumn = addSubtractCol.value;
+                const colIndex = findColumnIndex(selectedColumn);
+                if (colIndex === -1) return;
+                let rowsAffected = 0;
+                previewTable.querySelectorAll('tbody tr').forEach(tr => {
+                    const cell = tr.cells[colIndex];
+                    if (cell) {
+                        const currentValue = parseInt(cell.textContent, 10);
+                        if (!isNaN(currentValue)) {
+                            cell.textContent = currentValue + valueToAdd;
+                            rowsAffected++;
+                        }
+                    }
+                });
+                statusEl.textContent = `Applied operation to ${rowsAffected} rows in '${selectedColumn}' column.`;
+                statusEl.className = 'font-medium mb-4 h-5 text-green-600 dark:text-green-300';
+                addSubtractInput.value = '';
+            });
+
+            applySubstituteBtn.addEventListener('click', () => {
+                const findValue = findInput.value;
+                const replaceValue = replaceInput.value;
+                if (findValue === "") {
+                    statusEl.textContent = "Please enter a value to find.";
+                    statusEl.className = 'font-medium mb-4 h-5 text-red-500 dark:text-red-300';
+                    return;
+                }
+                const selectedColumn = substituteCol.value;
+                const colIndex = findColumnIndex(selectedColumn);
+                if (colIndex === -1) return;
+                let rowsAffected = 0;
+                previewTable.querySelectorAll('tbody tr').forEach(tr => {
+                    const cell = tr.cells[colIndex];
+                    if (cell && cell.textContent === findValue) {
+                        cell.textContent = replaceValue;
+                        rowsAffected++;
+                    }
+                });
+                statusEl.textContent = `Substituted ${rowsAffected} cells in '${selectedColumn}' column.`;
+                statusEl.className = 'font-medium mb-4 h-5 text-green-600 dark:text-green-300';
+                findInput.value = '';
+                replaceInput.value = '';
+            });
+
+            selectFileBtn.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) handleFile(e.target.files[0]);
+                e.target.value = null; 
+            });
+
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                textInput.addEventListener(eventName, preventDefaults, false);
+                document.body.addEventListener(eventName, preventDefaults, false);
+            });
+            ['dragenter', 'dragover'].forEach(eventName => textInput.addEventListener(eventName, highlight, false));
+            ['dragleave', 'drop'].forEach(eventName => textInput.addEventListener(eventName, unhighlight, false));
+            textInput.addEventListener('drop', (e) => {
+                if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
+            }, false);
+
+            function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+            function highlight() { textInput.classList.add('drag-active'); }
+            function unhighlight() { textInput.classList.remove('drag-active'); }
+
+            function handleFile(file) {
+                const fileType = file.type;
+                const fileName = file.name;
+                originalFileName = fileName;
+
+                if (fileType.includes('officedocument') || fileName.endsWith('.docx') || 
+                    fileType.includes('application/pdf') || fileName.endsWith('.pdf')) {
+                     statusEl.textContent = 'Error: Cannot read .docx or .pdf. Please copy and paste the text manually.';
+                     statusEl.className = 'font-medium mb-4 h-5 text-red-500 dark:text-red-300';
+                     originalFileName = 'converted_data';
+                     return;
+                }
+                if (!fileType.startsWith('text/') && !fileName.endsWith('.json') && !fileName.endsWith('.md') && !fileName.endsWith('.csv') && !fileName.endsWith('.txt') && fileType !== "") {
+                     statusEl.textContent = 'Error: Only plain text files (.txt, .json, .csv, .md) can be dropped.';
+                     statusEl.className = 'font-medium mb-4 h-5 text-red-500 dark:text-red-300';
+                     originalFileName = 'converted_data';
+                     return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    textInput.value = event.target.result;
+                    statusEl.textContent = `Successfully loaded text from ${file.name}. Click 'Convert'.`;
+                    statusEl.className = 'font-medium mb-4 h-5 text-blue-600 dark:text-blue-300';
+                    previewSection.classList.add('hidden');
+                    downloadBtn.classList.add('hidden');
+                    downloadExcelBtn.classList.add('hidden');
+                    dataToolsSection.classList.add('hidden');
+                    currentHeaders = [];
+                };
+                reader.onerror = () => {
+                    statusEl.textContent = 'Error reading file.';
+                    statusEl.className = 'font-medium mb-4 h-5 text-red-500 dark:text-red-300';
+                    originalFileName = 'converted_data';
+                };
+                reader.readAsText(file);
+            }
+
+            function normalizeLine(line) {
+                if (!line.trim() || !line.trim().startsWith('id:')) return null;
+                const item = {};
+                const validKeys = ["question", "options", "topic", "difficulty", "explanation", "tags", "answer"];
+                const parts = line.split(/(?=question:|options:|topic:|difficulty:|difficult:|explanation:|tags:|answer:)/);
+                
+                parts.forEach((part, index) => {
+                    part = part.trim();
+                    if (index === 0) {
+                        item.id = part.replace('id:', '').trim();
+                    } else {
+                        const firstColonIndex = part.indexOf(':');
+                        if (firstColonIndex > -1) {
+                            let key = part.substring(0, firstColonIndex).trim();
+                            let value = part.substring(firstColonIndex + 1).trim();
+                            if (key === 'difficult') key = 'difficulty';
+                            value = value.replace(/^"(.*)"$/, '$1').trim();
+                            if (validKeys.includes(key)) item[key] = value;
+                        }
+                    }
+                });
+                return item;
+            }
+
+            function convertToCSV(data, headers) {
+                const csvRows = [];
+                csvRows.push(headers.join(','));
+                for (const item of data) {
+                    const values = headers.map(header => {
+                        const val = item[header] || "";
+                        return `"${escapeCSV(val)}"`;
+                    });
+                    csvRows.push(values.join(','));
+                }
+                return csvRows.join('\n');
+            }
+
+            function displayPreview(data, headers) {
+                previewTable.innerHTML = '';
+                const thead = document.createElement('thead');
+                thead.className = 'bg-slate-100 dark:bg-slate-700 sticky top-0 z-10'; // Re-apply class for JS-created element
+                const headerRow = document.createElement('tr');
+                headers.forEach((header, index) => {
+                    const th = document.createElement('th');
+                    let thClasses = 'p-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider border-b-2 border-slate-300 dark:border-slate-600';
+                    if (index < headers.length - 1) { // Not the last header
+                        thClasses += ' border-r border-slate-200 dark:border-slate-700';
+                    }
+                    th.className = thClasses;
+                    th.textContent = header;
+                    headerRow.appendChild(th);
+                });
+                thead.appendChild(headerRow);
+                previewTable.appendChild(thead);
+
+                const tbody = document.createElement('tbody');
+                data.forEach(item => {
+                    const tr = document.createElement('tr');
+                    headers.forEach(header => {
+                        const td = document.createElement('td');
+                        td.className = 'editable-cell';
+                        const cellData = item[header] || "";
+                        td.textContent = cellData;
+                        td.title = cellData;
+                        td.setAttribute('contenteditable', 'true');
+                        tr.appendChild(td);
+                    });
+                    tbody.appendChild(tr);
+                });
+                previewTable.appendChild(tbody);
+                previewSection.classList.remove('hidden');
+            }
+        })();
+
+
+        // ====================================================================
+        // ==                 JSON CONVERTER JAVASCRIPT                    ==
+        // ====================================================================
+        (function() {
+            const jsonFileInput = document.getElementById('json_jsonFile');
+            const fileNameSpan = document.getElementById('json_fileName');
+            const convertBtn = document.getElementById('json_convertBtn');
+            const downloadBtn = document.getElementById('json_downloadBtn');
+            const downloadExcelBtn = document.getElementById('json_downloadExcelBtn');
+            const statusEl = document.getElementById('json_status');
+            const previewSection = document.getElementById('json_previewSection');
+            const previewTable = document.getElementById('json_previewTable');
+            const dropZone = document.getElementById('json_dropZone');
+
+            let originalFileName = 'converted_data';
+            let selectedFile = null;
+            let currentHeaders = []; // Store headers for download
+
+            jsonFileInput.addEventListener('change', () => {
+                if (jsonFileInput.files.length > 0) handleFile(jsonFileInput.files[0]);
+            });
+
+            dropZone.addEventListener('click', (e) => {
+                if (e.target.tagName !== 'LABEL' && e.target.closest('label') === null) {
+                    jsonFileInput.click();
+                }
+            });
+
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, preventDefaults, false);
+                document.body.addEventListener(eventName, preventDefaults, false);
+            });
+            ['dragenter', 'dragover'].forEach(eventName => dropZone.addEventListener(eventName, highlight, false));
+            ['dragleave', 'drop'].forEach(eventName => dropZone.addEventListener(eventName, unhighlight, false));
+            dropZone.addEventListener('drop', handleDrop, false);
+
+            function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+            function highlight() { dropZone.classList.add('drag-active'); }
+            function unhighlight() { dropZone.classList.remove('drag-active'); }
+
+            function handleDrop(e) {
+                if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
+            }
+
+            function handleFile(file) {
+                if (!file) {
+                    selectedFile = null;
+                    fileNameSpan.textContent = 'No file selected';
+                    return;
+                }
+                if (file.type !== 'application/json' && !file.name.endsWith('.json')) {
+                    statusEl.textContent = 'Error: Please select a valid .json file.';
+                    statusEl.className = 'font-medium mb-4 h-5 text-red-500 dark:text-red-300';
+                    selectedFile = null;
+                    fileNameSpan.textContent = 'Invalid file';
+                    return;
+                }
+                selectedFile = file;
+                fileNameSpan.textContent = file.name;
+                originalFileName = file.name.replace(/\.[^/.]+$/, "");
+                statusEl.textContent = '';
+                previewSection.classList.add('hidden');
+                downloadBtn.classList.add('hidden');
+                downloadExcelBtn.classList.add('hidden');
+            }
+
+            convertBtn.addEventListener('click', () => {
+                if (!selectedFile) {
+                    statusEl.textContent = 'Please select a JSON file first.';
+                    statusEl.className = 'font-medium mb-4 h-5 text-red-500 dark:text-red-300';
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const jsonText = event.target.result;
+                        const parsedJson = JSON.parse(jsonText);
+                        
+                        let data;
+                        // Handle both { "questions": [...] } and simple [...]
+                        if (Array.isArray(parsedJson)) {
+                            data = parsedJson;
+                        } else if (parsedJson.questions && Array.isArray(parsedJson.questions)) {
+                            data = parsedJson.questions;
+                        } else {
+                             // Try to find the first key that is an array
+                            const firstArrayKey = Object.keys(parsedJson).find(key => Array.isArray(parsedJson[key]));
+                            if (firstArrayKey) {
+                                data = parsedJson[firstArrayKey];
+                            } else {
+                                throw new Error('JSON is not an array and no "questions" array was found.');
+                            }
+                        }
+
+                        const normalizedData = data.map(normalizeItem);
+                        
+                        // Define Headers dynamically or use a fixed set
+                        const fixedHeaders = ["id", "question", "options", "answer", "explanation", "topics", "difficulty", "type"];
+                        const dynamicHeaders = [...new Set(normalizedData.flatMap(item => Object.keys(item)))];
+                        // Prioritize fixed headers but include dynamic ones
+                        currentHeaders = [...fixedHeaders, ...dynamicHeaders.filter(h => !fixedHeaders.includes(h))];
+
+                        displayPreview(normalizedData, currentHeaders);
+
+                        downloadBtn.classList.remove('hidden');
+                        downloadExcelBtn.classList.remove('hidden');
+                        statusEl.textContent = `Successfully converted ${normalizedData.length} items.`;
+                        statusEl.className = 'font-medium mb-4 h-5 text-green-600 dark:text-green-300';
+
+                    } catch (error) {
+                        statusEl.textContent = `Error: ${error.message}`;
+                        statusEl.className = 'font-medium mb-4 h-5 text-red-500 dark:text-red-300';
+                        previewSection.classList.add('hidden');
+                        downloadBtn.classList.add('hidden');
+                        downloadExcelBtn.classList.add('hidden');
+                    }
+                };
+                reader.onerror = () => {
+                    statusEl.textContent = 'Error reading file.';
+                    statusEl.className = 'font-medium mb-4 h-5 text-red-500 dark:text-red-300';
+                };
+                reader.readAsText(selectedFile);
+            });
+
+            /**
+             * Gets the current data from the editable JSON table.
+             */
+            function getDataFromTable() {
+                const data = [];
+                const tableHeaders = [];
+                
+                previewTable.querySelectorAll('thead th').forEach(th => {
+                    tableHeaders.push(th.textContent.toLowerCase());
+                });
+
+                previewTable.querySelectorAll('tbody tr').forEach(tr => {
+                    const item = {};
+                    tr.querySelectorAll('td').forEach((td, index) => {
+                        const header = tableHeaders[index];
+                        item[header] = td.textContent;
+                    });
+                    data.push(item);
+                });
+                return data;
+            }
+            
+            /**
+             * Converts an array of objects to a CSV string.
+             */
+            function convertToCSV(data, headers) {
+                const csvRows = [];
+                csvRows.push(headers.join(','));
+                for (const item of data) {
+                    const values = headers.map(header => {
+                        const val = item[header] || "";
+                        return `"${escapeCSV(val)}"`;
+                    });
+                    csvRows.push(values.join(','));
+                }
+                return csvRows.join('\n');
+            }
+
+            downloadBtn.addEventListener('click', () => {
+                try {
+                    const editedData = getDataFromTable();
+                    if (editedData.length === 0) throw new Error("No data in the table to download.");
+
+                    const newCsvData = convertToCSV(editedData, currentHeaders);
+                    const blob = new Blob([newCsvData], { type: 'text/csv;charset=utf-8;' });
+                    const link = document.createElement('a');
+                    const url = URL.createObjectURL(blob);
+                    link.setAttribute('href', url);
+                    link.setAttribute('download', `${originalFileName}.csv`);
+                    link.style.visibility = 'hidden';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                } catch (error) {
+                    statusEl.textContent = `Error downloading CSV: ${error.message}`;
+                    statusEl.className = 'font-medium mb-4 h-5 text-red-500 dark:text-red-300';
+                }
+            });
+
+            downloadExcelBtn.addEventListener('click', () => {
+                 try {
+                    const editedData = getDataFromTable();
+                    if (editedData.length === 0) throw new Error("No data in the table to download.");
+
+                    const wb = XLSX.utils.book_new();
+                    const ws = XLSX.utils.json_to_sheet(editedData, { header: currentHeaders });
+                    XLSX.utils.book_append_sheet(wb, ws, 'Data');
+                    XLSX.writeFile(wb, `${originalFileName}.xlsx`);
+
+                    statusEl.textContent = `Successfully exported ${editedData.length} items to Excel.`;
+                    statusEl.className = 'font-medium mb-4 h-5 text-green-600 dark:text-green-300';
+                } catch (error) {
+                    statusEl.textContent = `Error exporting Excel: ${error.message}`;
+                    statusEl.className = 'font-medium mb-4 h-5 text-red-500 dark:text-red-300';
+                }
+            });
+
+            function normalizeItem(item) {
+                let optionsStr = "";
+                if (Array.isArray(item.options)) {
+                    // Turn ["A", "B"] into "[\"A\",\"B\"]"
+                    optionsStr = JSON.stringify(item.options);
+                } else if (typeof item.options === 'string') {
+                    optionsStr = item.options.replace(/\n/g, " | ");
+                } else if (typeof item.options === 'object' && item.options !== null) {
+                    optionsStr = Object.entries(item.options).map(([key, value]) => `${key}. ${value}`).join(" | ");
+                }
+
+                let topicsStr = "";
+                if (Array.isArray(item.topics)) {
+                    topicsStr = item.topics.join(', ');
+                } else {
+                    topicsStr = item.topics || "";
+                }
+
+                return {
+                    id: item.id || "",
+                    question: item.text || item.question || "",
+                    options: optionsStr,
+                    answer: item.answer || item.correctAnswer || "",
+                    explanation: item.explanation || "",
+                    topics: topicsStr,
+                    difficulty: item.difficulty || "",
+                    type: item.type || ""
+                };
+            }
+
+            /**
+             * Displays data in the new spreadsheet-style grid.
+             */
+            function displayPreview(data, headers) {
+                previewTable.innerHTML = ''; // Clear
+                
+                // Create header
+                const thead = document.createElement('thead');
+                thead.className = 'bg-slate-100 dark:bg-slate-700 sticky top-0 z-10'; // Re-apply class
+                const headerRow = document.createElement('tr');
+                headers.forEach((header, index) => {
+                    const th = document.createElement('th');
+                    let thClasses = 'p-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider border-b-2 border-slate-300 dark:border-slate-600';
+                    if (index < headers.length - 1) { // Not the last header
+                        thClasses += ' border-r border-slate-200 dark:border-slate-700';
+                    }
+                    th.className = thClasses;
+                    th.textContent = header;
+                    headerRow.appendChild(th);
+                });
+                thead.appendChild(headerRow);
+                previewTable.appendChild(thead);
+
+                // Create body
+                const tbody = document.createElement('tbody');
+                
+                data.forEach(item => {
+                    const tr = document.createElement('tr');
+                    headers.forEach(header => {
+                        const td = document.createElement('td');
+                        td.className = 'editable-cell'; // Use new editable cell class
+                        const cellData = item[header] || "";
+                        td.textContent = cellData;
+                        td.title = cellData;
+                        td.setAttribute('contenteditable', 'true'); // MAKE CELL EDITABLE
+                        tr.appendChild(td);
+                    });
+                    tbody.appendChild(tr);
+                });
+                previewTable.appendChild(tbody);
+
+                previewSection.classList.remove('hidden');
+            }
+        })();
+
+    </script>
+</body>
+</html>
+
+
