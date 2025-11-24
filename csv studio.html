@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV Studio</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        @keyframes fade-in-up {
+            from { opacity: 0; transform: translate(-50%, 20px); }
+            to { opacity: 1; transform: translate(-50%, 0); }
+        }
+        .animate-fade-in-up {
+            animation: fade-in-up 0.3s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo, useRef } = React;
+
+        // --- Icons (Inline SVGs) ---
+        const Icons = {
+            FileSpreadsheet: (props) => (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 13h2"/><path d="M14 13h2"/><path d="M8 17h2"/><path d="M14 17h2"/></svg>
+            ),
+            Upload: (props) => (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+            ),
+            Trash2: (props) => (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+            ),
+            Download: (props) => (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+            ),
+            Search: (props) => (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            ),
+            Calculator: (props) => (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>
+            ),
+            X: (props) => (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            ),
+            ChevronLeft: (props) => (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m15 18-6-6 6-6"/></svg>
+            ),
+            ChevronRight: (props) => (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m9 18 6-6-6-6"/></svg>
+            ),
+            Check: (props) => (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="20 6 9 17 4 12"/></svg>
+            ),
+            Plus: (props) => (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+            )
+        };
+
+        // --- CSV Parsing Utility ---
+        const CSVParser = {
+            parse: (content) => {
+                const rows = [];
+                let currentRow = [];
+                let currentCell = '';
+                let insideQuotes = false;
+                
+                // Normalize line endings
+                const text = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+                
+                for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                const nextChar = text[i + 1];
+
+                if (char === '"') {
+                    if (insideQuotes && nextChar === '"') {
+                    currentCell += '"';
+                    i++; // Skip escape quote
+                    } else {
+                    insideQuotes = !insideQuotes;
+                    }
+                } else if (char === ',' && !insideQuotes) {
+                    currentRow.push(currentCell);
+                    currentCell = '';
+                } else if (char === '\n' && !insideQuotes) {
+                    currentRow.push(currentCell);
+                    rows.push(currentRow);
+                    currentRow = [];
+                    currentCell = '';
+                } else {
+                    currentCell += char;
+                }
+                }
+                if (currentCell || currentRow.length > 0) {
+                currentRow.push(currentCell);
+                rows.push(currentRow);
+                }
+                
+                if (rows.length === 0) return { headers: [], data: [] };
+
+                // Assume first row is header
+                const headers = rows[0].map(h => h.trim());
+                const data = rows.slice(1).map((row, idx) => {
+                const rowObj = {};
+                headers.forEach((h, i) => {
+                    rowObj[h] = row[i] || '';
+                });
+                return rowObj;
+                });
+
+                return { headers, data };
+            },
+
+            unparse: (data, headers) => {
+                const escape = (val) => {
+                if (val === null || val === undefined) return '';
+                const str = String(val);
+                if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+                    return `"${str.replace(/"/g, '""')}"`;
+                }
+                return str;
+                };
+
+                const headerRow = headers.map(escape).join(',');
+                const bodyRows = data.map(row => {
+                return headers.map(header => escape(row[header])).join(',');
+                }).join('\n');
+
+                return `${headerRow}\n${bodyRows}`;
+            }
+        };
+
+        // --- App Component ---
+        function App() {
+            // --- State ---
+            const [view, setView] = useState('upload'); // 'upload' | 'editor'
+            const [data, setData] = useState([]);
+            const [columns, setColumns] = useState([]);
+            const [filename, setFilename] = useState('merged_data.csv');
+            const [isDragging, setIsDragging] = useState(false);
+            
+            // UI State
+            const [searchQuery, setSearchQuery] = useState('');
+            const [currentPage, setCurrentPage] = useState(1);
+            const rowsPerPage = 50;
+            const [notification, setNotification] = useState(null);
+            const [showFormulaModal, setShowFormulaModal] = useState(false);
+            
+            // Ref for the "Add File" input in editor
+            const addFileInputRef = useRef(null);
+
+            // --- Actions ---
+
+            const processFiles = async (files, existingData = [], existingColumns = []) => {
+                if (files.length === 0) return;
+
+                let newData = [];
+                let newHeaders = new Set(existingColumns);
+                
+                for (const file of files) {
+                    try {
+                        const text = await file.text();
+                        const result = CSVParser.parse(text);
+                        
+                        result.headers.forEach(h => newHeaders.add(h));
+                        
+                        // Tag source file
+                        const fileData = result.data.map(row => ({...row, _sourceFile: file.name}));
+                        newData = [...newData, ...fileData];
+                    } catch (err) {
+                        console.error("Error parsing file:", file.name, err);
+                        showNotification(`Error parsing ${file.name}`);
+                    }
+                }
+
+                const finalHeaders = Array.from(newHeaders);
+                const combinedData = [...existingData, ...newData];
+
+                // Normalize: Ensure every row has every key from the combined headers
+                // Also regenerate _id to ensure uniqueness across the merged set
+                const normalizedData = combinedData.map((row, index) => {
+                    const newRow = { _id: index, _sourceFile: row._sourceFile || 'Unknown' };
+                    finalHeaders.forEach(h => {
+                        // Preserve existing value, or default to empty string
+                        newRow[h] = row[h] !== undefined ? row[h] : '';
+                    });
+                    return newRow;
+                });
+
+                return { headers: finalHeaders, data: normalizedData };
+            };
+
+            const handleFileUpload = async (e) => {
+                const files = Array.from(e.target.files || []);
+                if (files.length === 0) return;
+                
+                const result = await processFiles(files);
+                if (result) {
+                    setColumns(result.headers);
+                    setData(result.data);
+                    setFilename(files.length > 1 ? 'merged_master.csv' : files[0].name);
+                    setView('editor');
+                    showNotification(`Imported ${result.data.length} rows from ${files.length} files.`);
+                }
+            };
+
+            const handleAddMoreFiles = async (e) => {
+                const files = Array.from(e.target.files || []);
+                if (files.length === 0) return;
+
+                const result = await processFiles(files, data, columns);
+                if (result) {
+                    setColumns(result.headers);
+                    setData(result.data);
+                    showNotification(`Added ${files.length} files. Total rows: ${result.data.length}`);
+                }
+                // Reset input
+                e.target.value = '';
+            };
+
+            const handleDrop = async (e) => {
+                e.preventDefault();
+                setIsDragging(false);
+                
+                const files = [];
+                if (e.dataTransfer.items) {
+                    for (let i = 0; i < e.dataTransfer.items.length; i++) {
+                        if (e.dataTransfer.items[i].kind === 'file') {
+                            const file = e.dataTransfer.items[i].getAsFile();
+                            if(file.name.endsWith('.csv')) files.push(file);
+                        }
+                    }
+                } else {
+                    for (let i = 0; i < e.dataTransfer.files.length; i++) {
+                        if(e.dataTransfer.files[i].name.endsWith('.csv')) files.push(e.dataTransfer.files[i]);
+                    }
+                }
+
+                if (files.length === 0) return showNotification("Please drop CSV files only.");
+
+                const result = await processFiles(files);
+                if (result) {
+                    setColumns(result.headers);
+                    setData(result.data);
+                    setFilename(files.length > 1 ? 'merged_master.csv' : files[0].name);
+                    setView('editor');
+                    showNotification(`Imported ${result.data.length} rows from ${files.length} files.`);
+                }
+            };
+
+            const handleDragOver = (e) => {
+                e.preventDefault();
+                setIsDragging(true);
+            };
+
+            const handleDragLeave = (e) => {
+                e.preventDefault();
+                setIsDragging(false);
+            };
+
+            const showNotification = (msg) => {
+                setNotification(msg);
+                setTimeout(() => setNotification(null), 3000);
+            };
+
+            const handleCellEdit = (rowIndex, colKey, value) => {
+                const newData = [...data];
+                const targetIndex = newData.findIndex(r => r._id === rowIndex);
+                if (targetIndex !== -1) {
+                    newData[targetIndex][colKey] = value;
+                    setData(newData);
+                }
+            };
+
+            const removeDuplicates = () => {
+                const seen = new Set();
+                const uniqueData = data.filter(row => {
+                    // Create a signature excluding internal fields
+                    const { _id, _sourceFile, ...rest } = row;
+                    const signature = JSON.stringify(rest);
+                    if (seen.has(signature)) return false;
+                    seen.add(signature);
+                    return true;
+                });
+                
+                const removedCount = data.length - uniqueData.length;
+                setData(uniqueData);
+                showNotification(`Removed ${removedCount} duplicate rows.`);
+            };
+
+            const handleDownload = () => {
+                const csvContent = CSVParser.unparse(data, columns);
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', filename);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+
+            const addNewColumn = (name, formula) => {
+                if (!name) return showNotification("Column name required");
+                if (columns.includes(name)) return showNotification("Column already exists");
+
+                try {
+                    const newData = data.map(row => {
+                        // Safe evaluation context
+                        const compute = new Function('row', `
+                        try {
+                            const val = ${formula};
+                            return val;
+                        } catch(e) { return "Error"; }
+                        `);
+                        
+                        let result = compute(row);
+                        return { ...row, [name]: result };
+                    });
+                    
+                    setColumns([...columns, name]);
+                    setData(newData);
+                    setShowFormulaModal(false);
+                    showNotification(`Column '${name}' added successfully.`);
+                } catch (err) {
+                    showNotification("Invalid Formula Syntax");
+                }
+            };
+
+            const deleteColumn = (colToRemove) => {
+                if (confirm(`Delete column "${colToRemove}"?`)) {
+                    setColumns(columns.filter(c => c !== colToRemove));
+                }
+            };
+
+            // --- Filtering & Pagination ---
+
+            const filteredData = useMemo(() => {
+                if (!searchQuery) return data;
+                const lowerQ = searchQuery.toLowerCase();
+                return data.filter(row => 
+                    columns.some(col => String(row[col]).toLowerCase().includes(lowerQ))
+                );
+            }, [data, columns, searchQuery]);
+
+            const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+            const currentRows = filteredData.slice(
+                (currentPage - 1) * rowsPerPage, 
+                currentPage * rowsPerPage
+            );
+
+            // --- Sub-Components ---
+
+            const FormulaModal = () => {
+                const [name, setName] = useState('');
+                const [expression, setExpression] = useState('');
+
+                return (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                        <div className="bg-white rounded-lg shadow-2xl w-full max-w-md p-6">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-bold">Add Computed Column</h3>
+                            <button onClick={() => setShowFormulaModal(false)}><Icons.X className="w-5 h-5" /></button>
+                        </div>
+                        
+                        <div className="space-y-4">
+                            <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">New Column Name</label>
+                            <input 
+                                value={name}
+                                onChange={e => setName(e.target.value)}
+                                className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500 outline-none" 
+                                placeholder="e.g. Total"
+                            />
+                            </div>
+                            
+                            <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Formula (JavaScript)</label>
+                            <textarea 
+                                value={expression}
+                                onChange={e => setExpression(e.target.value)}
+                                className="w-full border rounded-md p-2 h-24 font-mono text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
+                                placeholder="row['Price'] * row['Qty']"
+                            />
+                            <p className="text-xs text-slate-500 mt-1">
+                                Use <code>row['ColumnName']</code> to access values. Math operations (+, -, *, /) are supported.
+                            </p>
+                            </div>
+
+                            <button 
+                            onClick={() => addNewColumn(name, expression)}
+                            className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 font-medium"
+                            >
+                            Apply Formula
+                            </button>
+                        </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            const UploadView = () => (
+                <div className="flex flex-col items-center justify-center h-screen bg-slate-50 p-6">
+                    <div 
+                        onDrop={handleDrop}
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        className={`bg-white p-10 rounded-2xl shadow-xl border-2 transition-all text-center max-w-lg w-full ${isDragging ? 'border-blue-500 bg-blue-50 scale-105' : 'border-slate-200'}`}
+                    >
+                        <div className="bg-blue-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <Icons.FileSpreadsheet className="w-10 h-10 text-blue-600" />
+                        </div>
+                        <h1 className="text-3xl font-bold text-slate-800 mb-2">CSV Studio</h1>
+                        <p className="text-slate-500 mb-8">
+                            Merge multiple CSVs, clean duplicates, and apply formulas.
+                        </p>
+                        
+                        <label className="relative block group cursor-pointer">
+                            <div className="border-2 border-dashed border-slate-300 rounded-xl p-8 transition-colors group-hover:border-blue-500 group-hover:bg-blue-50">
+                            <Icons.Upload className="w-8 h-8 mx-auto text-slate-400 group-hover:text-blue-500 mb-2" />
+                            <span className="text-sm font-medium text-slate-600 group-hover:text-blue-600">
+                                Drop files here or click to browse
+                            </span>
+                            <input 
+                                type="file" 
+                                multiple 
+                                accept=".csv" 
+                                className="hidden" 
+                                onChange={handleFileUpload}
+                            />
+                            </div>
+                        </label>
+                        
+                        <div className="mt-6 text-xs text-slate-400">
+                            Everything processes locally. Drag & Drop multiple files supported.
+                        </div>
+                    </div>
+                </div>
+            );
+
+            const EditorView = () => (
+                <div className="flex flex-col h-screen bg-white">
+                    {/* Top Toolbar */}
+                    <div className="border-b border-slate-200 bg-slate-50 p-4 flex flex-wrap items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-md border shadow-sm">
+                            <Icons.FileSpreadsheet className="w-5 h-5 text-green-600" />
+                            <input 
+                                value={filename} 
+                                onChange={(e) => setFilename(e.target.value)}
+                                className="font-medium text-slate-700 outline-none min-w-[150px]"
+                            />
+                            </div>
+                            <span className="text-xs text-slate-400 bg-slate-200 px-2 py-1 rounded-full">
+                            {data.length} Rows
+                            </span>
+                            <span className="text-xs text-slate-400 bg-slate-200 px-2 py-1 rounded-full">
+                            {columns.length} Columns
+                            </span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            {/* Search */}
+                            <div className="relative">
+                            <Icons.Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <input 
+                                type="text" 
+                                placeholder="Search data..."
+                                value={searchQuery}
+                                onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                                className="pl-9 pr-4 py-1.5 text-sm border rounded-md focus:ring-2 focus:ring-blue-500 outline-none w-48"
+                            />
+                            </div>
+
+                            <div className="h-6 w-px bg-slate-300 mx-2"></div>
+
+                            {/* Import More Button */}
+                            <input 
+                                type="file" 
+                                multiple 
+                                accept=".csv" 
+                                className="hidden" 
+                                ref={addFileInputRef}
+                                onChange={handleAddMoreFiles}
+                            />
+                            <button 
+                                onClick={() => addFileInputRef.current.click()}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-white hover:text-blue-600 rounded-md transition-colors border border-transparent hover:border-slate-200"
+                                title="Import and append more files"
+                            >
+                                <Icons.Plus className="w-4 h-4" />
+                                <span className="hidden sm:inline">Add Files</span>
+                            </button>
+
+                            {/* Tools */}
+                            <button 
+                            onClick={removeDuplicates}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-white hover:text-red-600 rounded-md transition-colors border border-transparent hover:border-slate-200"
+                            title="Remove Duplicates"
+                            >
+                            <Icons.Trash2 className="w-4 h-4" />
+                            <span className="hidden sm:inline">Dedup</span>
+                            </button>
+                            
+                            <button 
+                            onClick={() => setShowFormulaModal(true)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-white hover:text-purple-600 rounded-md transition-colors border border-transparent hover:border-slate-200"
+                            title="Add Formula Column"
+                            >
+                            <Icons.Calculator className="w-4 h-4" />
+                            <span className="hidden sm:inline">Formula</span>
+                            </button>
+
+                            <button 
+                            onClick={handleDownload}
+                            className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-md shadow-sm transition-colors"
+                            >
+                            <Icons.Download className="w-4 h-4" />
+                            Export
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Main Grid Area */}
+                    <div className="flex-1 overflow-auto relative">
+                        <table className="min-w-full border-collapse">
+                            <thead className="bg-slate-100 sticky top-0 z-10 shadow-sm">
+                            <tr>
+                                <th className="border-b border-r border-slate-300 w-12 bg-slate-200 p-2 text-center text-xs font-bold text-slate-500 select-none">
+                                #
+                                </th>
+                                {columns.map(col => (
+                                <th key={col} className="border-b border-r border-slate-300 p-2 text-left min-w-[150px] relative group">
+                                    <div className="flex items-center justify-between">
+                                    <span className="text-xs font-bold text-slate-600 uppercase tracking-wider truncate">{col}</span>
+                                    <button 
+                                        onClick={() => deleteColumn(col)}
+                                        className="opacity-0 group-hover:opacity-100 hover:bg-red-100 p-1 rounded text-red-500"
+                                    >
+                                        <Icons.X className="w-3 h-3" />
+                                    </button>
+                                    </div>
+                                </th>
+                                ))}
+                            </tr>
+                            </thead>
+                            <tbody className="bg-white">
+                            {currentRows.map((row, rIdx) => (
+                                <tr key={row._id} className="hover:bg-slate-50">
+                                <td className="border-b border-r border-slate-200 bg-slate-50 text-center text-xs text-slate-400 select-none">
+                                    {(currentPage - 1) * rowsPerPage + rIdx + 1}
+                                </td>
+                                {columns.map((col, cIdx) => (
+                                    <td 
+                                    key={`${row._id}-${col}`} 
+                                    className="border-b border-r border-slate-200 p-0 relative"
+                                    >
+                                    <input
+                                        className="w-full h-full p-2 text-sm bg-transparent outline-none focus:bg-blue-50 focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-all truncate"
+                                        value={row[col]}
+                                        onChange={(e) => handleCellEdit(row._id, col, e.target.value)}
+                                    />
+                                    </td>
+                                ))}
+                                </tr>
+                            ))}
+                            {currentRows.length === 0 && (
+                                <tr>
+                                <td colSpan={columns.length + 1} className="p-8 text-center text-slate-400">
+                                    No data found matching your search.
+                                </td>
+                                </tr>
+                            )}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* Footer / Pagination */}
+                    <div className="border-t border-slate-200 bg-slate-50 p-2 flex items-center justify-between text-sm text-slate-600">
+                        <div>
+                        Page {currentPage} of {totalPages || 1}
+                        </div>
+                        <div className="flex gap-1">
+                        <button 
+                            disabled={currentPage === 1}
+                            onClick={() => setCurrentPage(c => Math.max(1, c - 1))}
+                            className="p-1 rounded hover:bg-slate-200 disabled:opacity-50"
+                        >
+                            <Icons.ChevronLeft className="w-5 h-5" />
+                        </button>
+                        <button 
+                            disabled={currentPage === totalPages || totalPages === 0}
+                            onClick={() => setCurrentPage(c => Math.min(totalPages, c + 1))}
+                            className="p-1 rounded hover:bg-slate-200 disabled:opacity-50"
+                        >
+                            <Icons.ChevronRight className="w-5 h-5" />
+                        </button>
+                        </div>
+                    </div>
+
+                    {/* Overlays */}
+                    {showFormulaModal && <FormulaModal />}
+                    
+                    {notification && (
+                        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-4 py-2 rounded-full shadow-lg text-sm flex items-center gap-2 animate-fade-in-up">
+                        <Icons.Check className="w-4 h-4 text-green-400" />
+                        {notification}
+                        </div>
+                    )}
+                </div>
+            );
+
+            return view === 'upload' ? <UploadView /> : <EditorView />;
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

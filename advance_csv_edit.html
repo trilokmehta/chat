@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV Studio</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        @keyframes fade-in-up {
+            from { opacity: 0; transform: translate(-50%, 20px); }
+            to { opacity: 1; transform: translate(-50%, 0); }
+        }
+        .animate-fade-in-up {
+            animation: fade-in-up 0.3s ease-out forwards;
+        }
+        .checkbox-wrapper input:checked + div {
+            background-color: #2563eb;
+            border-color: #2563eb;
+        }
+        .checkbox-wrapper input:checked + div svg {
+            display: block;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo, useRef, useCallback } = React;
+
+        // --- Icons ---
+        const Icons = {
+            FileSpreadsheet: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 13h2"/><path d="M14 13h2"/><path d="M8 17h2"/><path d="M14 17h2"/></svg>,
+            Upload: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>,
+            Trash2: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>,
+            Download: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>,
+            Search: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>,
+            Calculator: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>,
+            X: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>,
+            ChevronLeft: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m15 18-6-6 6-6"/></svg>,
+            ChevronRight: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m9 18 6-6-6-6"/></svg>,
+            Check: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="20 6 9 17 4 12"/></svg>,
+            Plus: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M5 12h14"/><path d="M12 5v14"/></svg>,
+            ArrowUp: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m18 15-6-6-6 6"/></svg>,
+            ArrowDown: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m6 9 6 6 6-6"/></svg>,
+            Replace: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+        };
+
+        // --- Utils ---
+        const CSVParser = {
+            parse: (content) => {
+                const rows = [];
+                let currentRow = [];
+                let currentCell = '';
+                let insideQuotes = false;
+                const text = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+                
+                for (let i = 0; i < text.length; i++) {
+                    const char = text[i];
+                    const nextChar = text[i + 1];
+                    if (char === '"') {
+                        if (insideQuotes && nextChar === '"') {
+                            currentCell += '"';
+                            i++;
+                        } else {
+                            insideQuotes = !insideQuotes;
+                        }
+                    } else if (char === ',' && !insideQuotes) {
+                        currentRow.push(currentCell);
+                        currentCell = '';
+                    } else if (char === '\n' && !insideQuotes) {
+                        currentRow.push(currentCell);
+                        rows.push(currentRow);
+                        currentRow = [];
+                        currentCell = '';
+                    } else {
+                        currentCell += char;
+                    }
+                }
+                if (currentCell || currentRow.length > 0) {
+                    currentRow.push(currentCell);
+                    rows.push(currentRow);
+                }
+                
+                if (rows.length === 0) return { headers: [], data: [] };
+                const headers = rows[0].map(h => h.trim());
+                const data = rows.slice(1).map((row, idx) => {
+                    const rowObj = {};
+                    headers.forEach((h, i) => { rowObj[h] = row[i] || ''; });
+                    return rowObj;
+                });
+                return { headers, data };
+            },
+
+            unparse: (data, headers) => {
+                const escape = (val) => {
+                    if (val === null || val === undefined) return '';
+                    const str = String(val);
+                    if (str.includes(',') || str.includes('"') || str.includes('\n')) return `"${str.replace(/"/g, '""')}"`;
+                    return str;
+                };
+                const headerRow = headers.map(escape).join(',');
+                const bodyRows = data.map(row => headers.map(header => escape(row[header])).join(',')).join('\n');
+                return `${headerRow}\n${bodyRows}`;
+            }
+        };
+
+        // --- Sub-Components (Defined Outside App to Prevent Focus Loss) ---
+
+        const Checkbox = ({ checked, onChange }) => (
+            <label className="checkbox-wrapper cursor-pointer relative w-4 h-4 block">
+                <input type="checkbox" checked={checked} onChange={onChange} className="hidden" />
+                <div className="w-full h-full border border-slate-300 rounded bg-white flex items-center justify-center transition-colors">
+                    <Icons.Check className="w-3 h-3 text-white hidden pointer-events-none" />
+                </div>
+            </label>
+        );
+
+        const UploadView = ({ onUpload }) => (
+            <div className="flex flex-col items-center justify-center h-screen bg-slate-50 p-6">
+                <div 
+                    onDrop={async (e) => { e.preventDefault(); const files = [...e.dataTransfer.files].filter(f=>f.name.endsWith('.csv')); if(files.length) onUpload(files); }}
+                    onDragOver={e => e.preventDefault()}
+                    className="bg-white p-10 rounded-2xl shadow-xl border-2 border-slate-200 text-center max-w-lg w-full transition-colors hover:border-blue-400"
+                >
+                    <div className="bg-blue-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <Icons.FileSpreadsheet className="w-10 h-10 text-blue-600" />
+                    </div>
+                    <h1 className="text-3xl font-bold text-slate-800 mb-2">CSV Studio</h1>
+                    <p className="text-slate-500 mb-8">Merge multiple CSVs, clean, sort, and edit.</p>
+                    <label className="block bg-slate-50 border-2 border-dashed border-slate-300 rounded-xl p-8 cursor-pointer hover:bg-blue-50 hover:border-blue-500 transition-all group">
+                        <Icons.Upload className="w-8 h-8 mx-auto text-slate-400 group-hover:text-blue-500 mb-2" />
+                        <span className="text-sm font-medium text-slate-600 group-hover:text-blue-600">Drop files here or browse</span>
+                        <input type="file" multiple accept=".csv" className="hidden" onChange={(e) => onUpload([...e.target.files])} />
+                    </label>
+                </div>
+            </div>
+        );
+
+        const FormulaModal = ({ isOpen, onClose, onAdd }) => {
+            const [name, setName] = useState('');
+            const [expr, setExpr] = useState('');
+            if (!isOpen) return null;
+            return (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg shadow-2xl w-full max-w-md p-6">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-bold">Add Computed Column</h3>
+                            <button onClick={onClose}><Icons.X className="w-5 h-5" /></button>
+                        </div>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="text-xs font-bold text-slate-500 uppercase">Column Name</label>
+                                <input value={name} onChange={e => setName(e.target.value)} className="w-full border rounded p-2 mt-1" placeholder="Total" />
+                            </div>
+                            <div>
+                                <label className="text-xs font-bold text-slate-500 uppercase">Formula (JS)</label>
+                                <textarea value={expr} onChange={e => setExpr(e.target.value)} className="w-full border rounded p-2 h-24 font-mono text-sm mt-1" placeholder="row['Price'] * row['Qty']" />
+                            </div>
+                            <button onClick={() => { onAdd(name, expr); setName(''); setExpr(''); }} className="w-full bg-blue-600 text-white py-2 rounded font-medium">Create Column</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const FindReplaceModal = ({ isOpen, onClose, columns, onReplace }) => {
+            const [find, setFind] = useState('');
+            const [replace, setReplace] = useState('');
+            const [col, setCol] = useState('__ALL__');
+            const [matchCase, setMatchCase] = useState(false);
+            if (!isOpen) return null;
+            return (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg shadow-2xl w-full max-w-sm p-5">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="font-bold text-lg">Find & Replace</h3>
+                            <button onClick={onClose}><Icons.X className="w-5 h-5 text-slate-400" /></button>
+                        </div>
+                        <div className="space-y-3">
+                            <input value={find} onChange={e=>setFind(e.target.value)} placeholder="Find..." className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none" />
+                            <input value={replace} onChange={e=>setReplace(e.target.value)} placeholder="Replace with..." className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none" />
+                            <select value={col} onChange={e=>setCol(e.target.value)} className="w-full border p-2 rounded text-sm bg-white">
+                                <option value="__ALL__">All Columns</option>
+                                {columns.map(c => <option key={c} value={c}>{c}</option>)}
+                            </select>
+                            <label className="flex items-center gap-2 text-sm text-slate-600">
+                                <input type="checkbox" checked={matchCase} onChange={e=>setMatchCase(e.target.checked)} />
+                                Match Case
+                            </label>
+                            <button onClick={() => onReplace(find, replace, col, matchCase)} className="w-full bg-blue-600 text-white py-2 rounded font-medium hover:bg-blue-700">Replace All</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const EditorView = ({ 
+            data, columns, filename, setFilename, searchQuery, setSearchQuery, 
+            currentPage, setCurrentPage, selectedRows, setSelectedRows, sortConfig, setSortConfig,
+            onAddMore, onDeleteSelected, onRemoveDuplicates, onDownload, 
+            onDeleteColumn, onCellEdit, onOpenFormula, onOpenFindReplace, 
+            filteredAndSortedData, totalPages, rowsPerPage
+        }) => {
+            const addFileInputRef = useRef(null);
+            
+            // Generate current rows slice based on passed filtered data
+            const currentRows = filteredAndSortedData.slice(
+                (currentPage - 1) * rowsPerPage, 
+                currentPage * rowsPerPage
+            );
+
+            const toggleSelectAll = () => {
+                if (selectedRows.size >= currentRows.length && currentRows.length > 0) {
+                    setSelectedRows(new Set());
+                } else {
+                    const newSet = new Set(selectedRows);
+                    currentRows.forEach(r => newSet.add(r._id));
+                    setSelectedRows(newSet);
+                }
+            };
+
+            const toggleRowSelection = (id) => {
+                const newSet = new Set(selectedRows);
+                if (newSet.has(id)) newSet.delete(id);
+                else newSet.add(id);
+                setSelectedRows(newSet);
+            };
+
+            const handleSort = (key) => {
+                let direction = 'asc';
+                if (sortConfig.key === key && sortConfig.direction === 'asc') {
+                    direction = 'desc';
+                }
+                setSortConfig({ key, direction });
+            };
+
+            return (
+                <div className="flex flex-col h-screen bg-white">
+                    {/* Top Bar */}
+                    <div className="border-b border-slate-200 bg-slate-50 p-3 flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded border">
+                                <Icons.FileSpreadsheet className="w-4 h-4 text-green-600" />
+                                <input value={filename} onChange={(e) => setFilename(e.target.value)} className="font-medium text-sm text-slate-700 outline-none w-32" />
+                            </div>
+                            <div className="flex gap-2 text-xs">
+                                <span className="bg-slate-200 px-2 py-1 rounded-full text-slate-600">{filteredAndSortedData.length} Rows</span>
+                                <span className="bg-slate-200 px-2 py-1 rounded-full text-slate-600">{columns.length} Cols</span>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <div className="relative">
+                                <Icons.Search className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                <input 
+                                    type="text" 
+                                    placeholder="Search..." 
+                                    value={searchQuery} 
+                                    onChange={(e) => {setSearchQuery(e.target.value); setCurrentPage(1);}} 
+                                    className="pl-8 pr-3 py-1.5 text-sm border rounded focus:ring-2 focus:ring-blue-500 outline-none w-40" 
+                                />
+                            </div>
+                            <div className="w-px h-6 bg-slate-300 mx-1"></div>
+                            <input type="file" multiple accept=".csv" className="hidden" ref={addFileInputRef} onChange={(e) => onAddMore([...e.target.files])} />
+                            <button onClick={() => addFileInputRef.current.click()} className="p-1.5 hover:bg-white rounded text-slate-600 hover:text-blue-600" title="Add Files"><Icons.Plus className="w-5 h-5" /></button>
+                            <button onClick={onOpenFindReplace} className="p-1.5 hover:bg-white rounded text-slate-600 hover:text-purple-600" title="Find & Replace"><Icons.Replace className="w-5 h-5" /></button>
+                            <button onClick={onOpenFormula} className="p-1.5 hover:bg-white rounded text-slate-600 hover:text-indigo-600" title="Formula"><Icons.Calculator className="w-5 h-5" /></button>
+                            <button onClick={onRemoveDuplicates} className="p-1.5 hover:bg-white rounded text-slate-600 hover:text-orange-600" title="Remove Duplicates"><Icons.Trash2 className="w-5 h-5" /></button>
+                            {selectedRows.size > 0 && (
+                                <button onClick={onDeleteSelected} className="flex items-center gap-1 bg-red-50 text-red-600 px-3 py-1.5 rounded text-xs font-bold border border-red-200 hover:bg-red-100">Delete {selectedRows.size}</button>
+                            )}
+                            <button onClick={onDownload} className="bg-blue-600 text-white px-4 py-1.5 rounded text-sm font-bold hover:bg-blue-700 shadow-sm flex items-center gap-2"><Icons.Download className="w-4 h-4" /> Export</button>
+                        </div>
+                    </div>
+
+                    {/* Table */}
+                    <div className="flex-1 overflow-auto relative">
+                        <table className="min-w-full border-collapse text-sm">
+                            <thead className="bg-slate-100 sticky top-0 z-10 shadow-sm">
+                                <tr>
+                                    <th className="border-b border-r border-slate-300 w-10 p-2 text-center bg-slate-200">
+                                        <Checkbox checked={selectedRows.size > 0 && selectedRows.size >= currentRows.length} onChange={toggleSelectAll} />
+                                    </th>
+                                    <th className="border-b border-r border-slate-300 w-10 p-2 text-center text-xs text-slate-500 bg-slate-200">#</th>
+                                    {columns.map(col => (
+                                        <th key={col} className="border-b border-r border-slate-300 p-2 text-left min-w-[120px] group bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer select-none" onClick={() => handleSort(col)}>
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-1 font-bold text-slate-700 truncate">
+                                                    {col}
+                                                    {sortConfig.key === col && (sortConfig.direction === 'asc' ? <Icons.ArrowUp className="w-3 h-3" /> : <Icons.ArrowDown className="w-3 h-3" />)}
+                                                </div>
+                                                <button onClick={(e) => { e.stopPropagation(); onDeleteColumn(col); }} className="opacity-0 group-hover:opacity-100 hover:bg-red-200 p-1 rounded text-red-500"><Icons.X className="w-3 h-3" /></button>
+                                            </div>
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white">
+                                {currentRows.map((row, rIdx) => (
+                                    <tr key={row._id} className="hover:bg-blue-50 group">
+                                        <td className="border-b border-r border-slate-200 p-2 text-center bg-slate-50">
+                                            <Checkbox checked={selectedRows.has(row._id)} onChange={() => toggleRowSelection(row._id)} />
+                                        </td>
+                                        <td className="border-b border-r border-slate-200 p-2 text-center text-slate-400 text-xs select-none bg-slate-50">
+                                            {(currentPage - 1) * rowsPerPage + rIdx + 1}
+                                        </td>
+                                        {columns.map(col => (
+                                            <td key={`${row._id}-${col}`} className="border-b border-r border-slate-200 p-0 relative min-w-[120px]">
+                                                <input
+                                                    className="w-full h-full p-2 bg-transparent outline-none focus:bg-white focus:ring-2 focus:ring-inset focus:ring-blue-500 text-slate-800 truncate"
+                                                    value={row[col]}
+                                                    onChange={(e) => onCellEdit(row._id, col, e.target.value)}
+                                                />
+                                            </td>
+                                        ))}
+                                    </tr>
+                                ))}
+                                {currentRows.length === 0 && (
+                                    <tr><td colSpan={columns.length + 2} className="p-8 text-center text-slate-400">No data found.</td></tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* Pagination */}
+                    <div className="border-t border-slate-200 bg-slate-50 p-2 flex items-center justify-between text-xs text-slate-600">
+                        <div>Page {currentPage} of {Math.max(1, totalPages)}</div>
+                        <div className="flex gap-1">
+                            <button disabled={currentPage===1} onClick={()=>setCurrentPage(c=>Math.max(1,c-1))} className="p-1 rounded hover:bg-slate-200 disabled:opacity-50"><Icons.ChevronLeft className="w-4 h-4"/></button>
+                            <button disabled={currentPage===totalPages || totalPages===0} onClick={()=>setCurrentPage(c=>Math.min(totalPages,c+1))} className="p-1 rounded hover:bg-slate-200 disabled:opacity-50"><Icons.ChevronRight className="w-4 h-4"/></button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- Main App Component ---
+        function App() {
+            // --- State ---
+            const [view, setView] = useState('upload'); 
+            const [data, setData] = useState([]);
+            const [columns, setColumns] = useState([]);
+            const [filename, setFilename] = useState('merged_data.csv');
+            
+            // Editor State
+            const [searchQuery, setSearchQuery] = useState('');
+            const [currentPage, setCurrentPage] = useState(1);
+            const [selectedRows, setSelectedRows] = useState(new Set());
+            const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+            
+            const rowsPerPage = 50;
+            const [notification, setNotification] = useState(null);
+            
+            // Modals
+            const [showFormulaModal, setShowFormulaModal] = useState(false);
+            const [showFindReplace, setShowFindReplace] = useState(false);
+            
+            // --- Logic ---
+
+            const filteredAndSortedData = useMemo(() => {
+                let result = [...data];
+                // 1. Filter
+                if (searchQuery) {
+                    const lowerQ = searchQuery.toLowerCase();
+                    result = result.filter(row => 
+                        columns.some(col => String(row[col]).toLowerCase().includes(lowerQ))
+                    );
+                }
+                // 2. Sort
+                if (sortConfig.key) {
+                    result.sort((a, b) => {
+                        const valA = a[sortConfig.key];
+                        const valB = b[sortConfig.key];
+                        const numA = parseFloat(valA);
+                        const numB = parseFloat(valB);
+                        if (!isNaN(numA) && !isNaN(numB) && valA !== '' && valB !== '') {
+                             return sortConfig.direction === 'asc' ? numA - numB : numB - numA;
+                        }
+                        const strA = String(valA).toLowerCase();
+                        const strB = String(valB).toLowerCase();
+                        if (strA < strB) return sortConfig.direction === 'asc' ? -1 : 1;
+                        if (strA > strB) return sortConfig.direction === 'asc' ? 1 : -1;
+                        return 0;
+                    });
+                }
+                return result;
+            }, [data, columns, searchQuery, sortConfig]);
+
+            const totalPages = Math.ceil(filteredAndSortedData.length / rowsPerPage);
+
+            const showNotification = (msg) => {
+                setNotification(msg);
+                setTimeout(() => setNotification(null), 3000);
+            };
+
+            const processFiles = async (files, existingData = [], existingColumns = []) => {
+                if (files.length === 0) return;
+                let newData = [];
+                let newHeaders = new Set(existingColumns);
+                
+                for (const file of files) {
+                    try {
+                        const text = await file.text();
+                        const result = CSVParser.parse(text);
+                        result.headers.forEach(h => newHeaders.add(h));
+                        const fileData = result.data.map(row => ({...row, _sourceFile: file.name}));
+                        newData = [...newData, ...fileData];
+                    } catch (err) {
+                        showNotification(`Error parsing ${file.name}`);
+                    }
+                }
+
+                const finalHeaders = Array.from(newHeaders);
+                const combinedData = [...existingData, ...newData];
+                const normalizedData = combinedData.map((row) => {
+                    const newRow = { ...row, _id: crypto.randomUUID() }; 
+                    finalHeaders.forEach(h => { newRow[h] = row[h] !== undefined ? row[h] : ''; });
+                    return newRow;
+                });
+
+                return { headers: finalHeaders, data: normalizedData };
+            };
+
+            // --- Handlers ---
+
+            const handleUpload = async (files) => {
+                const result = await processFiles(files);
+                if (result) {
+                    setColumns(result.headers);
+                    setData(result.data);
+                    setFilename(files.length > 1 ? 'merged_master.csv' : files[0].name);
+                    setView('editor');
+                    showNotification(`Imported ${result.data.length} rows.`);
+                }
+            };
+
+            const handleAddMore = async (files) => {
+                const result = await processFiles(files, data, columns);
+                if (result) {
+                    setColumns(result.headers);
+                    setData(result.data);
+                    showNotification(`Added ${files.length} files.`);
+                }
+            };
+
+            const handleDeleteSelected = () => {
+                if (confirm(`Delete ${selectedRows.size} selected rows?`)) {
+                    setData(data.filter(row => !selectedRows.has(row._id)));
+                    setSelectedRows(new Set());
+                    showNotification("Rows deleted.");
+                }
+            };
+
+            const removeDuplicates = () => {
+                const seen = new Set();
+                const uniqueData = data.filter(row => {
+                    // Unique signature based on visible columns content
+                    const signature = columns.map(c => String(row[c] || '')).join('|||');
+                    if (seen.has(signature)) return false;
+                    seen.add(signature);
+                    return true;
+                });
+                const removedCount = data.length - uniqueData.length;
+                setData(uniqueData);
+                showNotification(`Removed ${removedCount} duplicates.`);
+            };
+
+            const handleCellEdit = (rowId, colKey, value) => {
+                setData(prevData => prevData.map(row => {
+                    if (row._id === rowId) return { ...row, [colKey]: value };
+                    return row;
+                }));
+            };
+
+            const handleFindReplace = (find, replace, col, matchCase) => {
+                const safeFind = find.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const flags = matchCase ? 'g' : 'gi';
+                const regex = new RegExp(safeFind, flags);
+                let count = 0;
+                
+                const newData = data.map(row => {
+                    const newRow = { ...row };
+                    let modified = false;
+                    const colsToProcess = col === '__ALL__' ? columns : [col];
+                    colsToProcess.forEach(c => {
+                        const val = String(newRow[c] || '');
+                        if (regex.test(val)) {
+                            newRow[c] = val.replace(regex, replace);
+                            modified = true;
+                        }
+                    });
+                    if (modified) count++;
+                    return newRow;
+                });
+
+                if (count > 0) {
+                    setData(newData);
+                    showNotification(`Replaced ${count} occurrences.`);
+                    setShowFindReplace(false);
+                } else {
+                    showNotification("No matches found.");
+                }
+            };
+
+            const addNewColumn = (name, formula) => {
+                if (!name || columns.includes(name)) return showNotification("Invalid name");
+                try {
+                    const newData = data.map(row => {
+                        const compute = new Function('row', `try { return ${formula}; } catch(e) { return "Err"; }`);
+                        return { ...row, [name]: compute(row) };
+                    });
+                    setColumns([...columns, name]);
+                    setData(newData);
+                    setShowFormulaModal(false);
+                    showNotification(`Added '${name}'`);
+                } catch (err) {
+                    showNotification("Formula Error");
+                }
+            };
+
+            const handleDownload = () => {
+                const csvContent = CSVParser.unparse(data, columns);
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', filename);
+                document.body.appendChild(link);
+                link.click();
+            };
+
+            return (
+                <div>
+                    {view === 'upload' ? (
+                        <UploadView onUpload={handleUpload} />
+                    ) : (
+                        <EditorView 
+                            data={data}
+                            columns={columns}
+                            filename={filename}
+                            setFilename={setFilename}
+                            searchQuery={searchQuery}
+                            setSearchQuery={setSearchQuery}
+                            currentPage={currentPage}
+                            setCurrentPage={setCurrentPage}
+                            selectedRows={selectedRows}
+                            setSelectedRows={setSelectedRows}
+                            sortConfig={sortConfig}
+                            setSortConfig={setSortConfig}
+                            filteredAndSortedData={filteredAndSortedData}
+                            totalPages={totalPages}
+                            rowsPerPage={rowsPerPage}
+                            onAddMore={handleAddMore}
+                            onDeleteSelected={handleDeleteSelected}
+                            onRemoveDuplicates={removeDuplicates}
+                            onDownload={handleDownload}
+                            onDeleteColumn={(col) => { if(confirm('Delete?')) setColumns(columns.filter(c => c !== col)); }}
+                            onCellEdit={handleCellEdit}
+                            onOpenFormula={() => setShowFormulaModal(true)}
+                            onOpenFindReplace={() => setShowFindReplace(true)}
+                        />
+                    )}
+                    
+                    <FormulaModal 
+                        isOpen={showFormulaModal} 
+                        onClose={() => setShowFormulaModal(false)} 
+                        onAdd={addNewColumn} 
+                    />
+                    
+                    <FindReplaceModal 
+                        isOpen={showFindReplace} 
+                        onClose={() => setShowFindReplace(false)} 
+                        columns={columns}
+                        onReplace={handleFindReplace} 
+                    />
+
+                    {notification && (
+                        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-4 py-2 rounded-full shadow-lg text-sm flex items-center gap-2 animate-fade-in-up z-50">
+                            <Icons.Check className="w-4 h-4 text-green-400" /> {notification}
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
