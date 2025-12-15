@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Substance Style Visualizer</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; background-color: #121212; }
+        #canvas-container { width: 100vw; height: 100vh; display: block; }
+
+        /* UI Panel */
+        #ui-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(30, 30, 30, 0.85);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            width: 280px;
+            z-index: 10;
+            color: #eee;
+            border: 1px solid #444;
+            backdrop-filter: blur(10px);
+        }
+
+        h1 { font-size: 16px; margin: 0 0 10px 0; color: #fff; letter-spacing: 0.5px; text-transform: uppercase; font-weight: 700; }
+        p { font-size: 11px; color: #aaa; margin-bottom: 20px; }
+
+        /* Upload Button */
+        .file-upload {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 10px 0;
+            margin-bottom: 10px;
+            background: #3a3a3a;
+            color: #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            border: 1px solid #555;
+        }
+        .file-upload:hover { background: #007acc; color: #fff; border-color: #007acc; }
+        
+        input[type="file"] { display: none; }
+        
+        #status { 
+            margin-top: 10px; 
+            font-size: 11px; 
+            font-weight: 600; 
+            color: #4caf50; 
+            min-height: 1.5em;
+        }
+
+        /* Material List Helper */
+        #material-list {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #444;
+            font-size: 11px;
+            color: #888;
+        }
+        .mat-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .mat-name { color: #ccc; }
+        
+        /* GUI Tweaks for Substance Feel */
+        .dg.main {
+            position: absolute !important;
+            top: 20px !important;
+            right: 20px !important;
+            width: 320px !important;
+        }
+        .dg .c .slider { background: #222 !important; }
+        .dg .c .slider-fg { background: #007bff !important; }
+        .dg .cr.function { border-left: 3px solid #4caf50; } /* Highlight buttons */
+    </style>
+    
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+
+    <div id="ui-panel">
+        <h1>Material Studio</h1>
+        <p>Layer-based workflow</p>
+        
+        <label for="file-input" class="file-upload">
+            📂 Open Model (.glb)
+        </label>
+        <input type="file" id="file-input" accept=".glb, .gltf">
+        
+        <label for="hdri-input" class="file-upload">
+            ☀️ Load Environment (.hdr)
+        </label>
+        <input type="file" id="hdri-input" accept=".hdr, .exr">
+        
+        <div id="status">Ready to load.</div>
+        
+        <div id="material-list">
+            <strong>Detected Materials:</strong><br>
+            <div id="mat-content">None</div>
+        </div>
+    </div>
+
+    <div id="canvas-container"></div>
+
+<script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+    import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
+    // --- CONFIGURATION ---
+    const config = {
+        exposure: 1.0,
+        envRotation: 0,
+        autoRotate: false,
+    };
+
+    // --- DYNAMIC LAYERS ---
+    // We start with 2 default layers
+    let layers = [
+        { 
+            id: 1,
+            enabled: true,
+            name: 'Base Layer', 
+            targetMat: 'None', 
+            color: '#c08282', 
+            roughness: 0.5, 
+            metalness: 0.0 
+        },
+        { 
+            id: 2,
+            enabled: true,
+            name: 'Details', 
+            targetMat: 'None', 
+            color: '#222222', 
+            roughness: 0.2, 
+            metalness: 1.0 
+        }
+    ];
+
+    // Global variables
+    let scene, camera, renderer, controls, currentModel;
+    let uniqueMaterialNames = ['None']; 
+    let gui;
+    
+    // 1. INIT SCENE
+    function init() {
+        const container = document.getElementById('canvas-container');
+        
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color('#1a1a1a');
+
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(3, 2, 5);
+
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        // Lights
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
+        dirLight.position.set(5, 10, 7);
+        dirLight.castShadow = true;
+        dirLight.shadow.bias = -0.001;
+        scene.add(dirLight);
+        
+        const ambient = new THREE.AmbientLight(0xffffff, 0.3);
+        scene.add(ambient);
+
+        // Controls
+        controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+
+        // Default Env
+        loadHDRI('https://threejs.org/examples/textures/equirectangular/venice_sunset_1k.hdr');
+
+        window.addEventListener('resize', onWindowResize);
+        
+        // Initialize GUI after scene is ready
+        setupGUI();
+        animate();
+    }
+
+    // 2. LAYER LOGIC
+    function applyLayers() {
+        if (!currentModel) return;
+
+        // Map "Target Material" -> "Active Layer Config"
+        const materialMap = {};
+
+        // Loop through layers. 
+        // Later layers overwrite earlier ones (Stack behavior)
+        layers.forEach(layer => {
+            if (layer.enabled && layer.targetMat && layer.targetMat !== 'None') {
+                materialMap[layer.targetMat] = layer;
+            }
+        });
+
+        currentModel.traverse((child) => {
+            if (child.isMesh && child.material) {
+                const matName = child.material.name;
+                const activeLayer = materialMap[matName];
+
+                if (activeLayer) {
+                    child.material.color.set(activeLayer.color);
+                    child.material.roughness = activeLayer.roughness;
+                    child.material.metalness = activeLayer.metalness;
+                } else {
+                    // Optional: Reset logic could go here
+                }
+                child.material.needsUpdate = true;
+            }
+        });
+    }
+
+    // Helper to add a new layer
+    function addNewLayer() {
+        const newId = layers.length > 0 ? Math.max(...layers.map(l => l.id)) + 1 : 1;
+        layers.push({
+            id: newId,
+            enabled: true,
+            name: `New Layer ${newId}`,
+            targetMat: 'None',
+            color: '#' + Math.floor(Math.random()*16777215).toString(16), // Random hex
+            roughness: 0.5,
+            metalness: 0.0
+        });
+        setupGUI(); // Rebuild UI to show new layer
+    }
+
+    // Helper to remove a layer
+    function removeLayer(id) {
+        layers = layers.filter(l => l.id !== id);
+        setupGUI();
+        applyLayers();
+    }
+
+    // 3. GUI SETUP
+    function setupGUI() {
+        if (gui) gui.destroy();
+        gui = new GUI({ title: 'Layer Stack' });
+        
+        // GLOBAL SETTINGS
+        const envFolder = gui.addFolder('🌍 Global Settings');
+        
+        envFolder.add(config, 'exposure', 0, 3).name('Exposure').onChange(v => renderer.toneMappingExposure = v);
+        
+        // Fix for "Cannot set properties of undefined"
+        envFolder.add(config, 'envRotation', 0, 360).name('Env Rotation').onChange(v => {
+            if(scene && scene.backgroundRotation) {
+                scene.backgroundRotation.y = v * (Math.PI / 180);
+                scene.environmentRotation.y = v * (Math.PI / 180);
+            }
+        });
+        
+        envFolder.add(config, 'autoRotate').name('Turntable');
+
+        // ACTIONS
+        const actionParams = { add: addNewLayer };
+        gui.add(actionParams, 'add').name('➕ Add New Layer');
+
+        // LAYERS
+        // We iterate backwards so the top layer in GUI acts like top layer in Photoshop
+        [...layers].reverse().forEach((layer, index) => {
+            // Find actual index in original array
+            const originalIndex = layers.indexOf(layer);
+            
+            const folder = gui.addFolder((layer.enabled ? '🟢 ' : '⚪ ') + layer.name);
+            
+            // Toggle Visibility
+            folder.add(layer, 'enabled').name('Enable Layer').onChange(() => {
+                folder.title((layer.enabled ? '🟢 ' : '⚪ ') + layer.name); // Update icon
+                applyLayers();
+            });
+
+            // Target Logic
+            folder.add(layer, 'targetMat', uniqueMaterialNames).name('Link to Material').onChange(applyLayers);
+
+            // Style Logic
+            folder.addColor(layer, 'color').name('Color').onChange(applyLayers);
+            folder.add(layer, 'roughness', 0, 1).name('Roughness').onChange(applyLayers);
+            folder.add(layer, 'metalness', 0, 1).name('Metalness').onChange(applyLayers);
+            
+            // Delete Button
+            const delObj = { del: () => removeLayer(layer.id) };
+            folder.add(delObj, 'del').name('🗑️ Delete Layer');
+
+            // Close folder by default to save space, open first one
+            if(index !== 0) folder.close();
+        });
+    }
+
+    // 4. MODEL LOADING
+    function loadModel(url) {
+        const loader = new GLTFLoader();
+        document.getElementById('status').innerText = 'Loading Model...';
+        
+        loader.load(url, (gltf) => {
+            if (currentModel) {
+                scene.remove(currentModel);
+                // Dispose geometry/materials to prevent memory leaks
+                currentModel.traverse(c => {
+                    if(c.isMesh) {
+                        c.geometry.dispose();
+                        if(c.material.map) c.material.map.dispose();
+                    }
+                });
+            }
+
+            currentModel = gltf.scene;
+            
+            // Detect Materials
+            const matSet = new Set(['None']);
+            
+            currentModel.traverse(c => {
+                if(c.isMesh && c.material) {
+                    c.castShadow = true;
+                    c.receiveShadow = true;
+                    matSet.add(c.material.name);
+                    
+                    // Ensure environment map intensity is standard
+                    if(c.material.isMeshStandardMaterial) {
+                        c.material.envMapIntensity = 1;
+                    }
+                }
+            });
+            
+            uniqueMaterialNames = Array.from(matSet);
+            updateMaterialListUI(uniqueMaterialNames);
+            
+            // Smart Auto-Assign for default layers
+            autoAssignLayers(uniqueMaterialNames);
+            
+            // Center Model
+            const box = new THREE.Box3().setFromObject(currentModel);
+            const center = box.getCenter(new THREE.Vector3());
+            currentModel.position.sub(center);
+            
+            scene.add(currentModel);
+            
+            setupGUI();
+            applyLayers();
+            
+            document.getElementById('status').innerText = 'Model Loaded';
+            document.getElementById('status').style.color = '#4caf50';
+        });
+    }
+
+    function autoAssignLayers(names) {
+        // Simple logic to try and fill the first few layers
+        const materials = names.filter(n => n !== 'None');
+        if (materials.length === 0) return;
+
+        // Reset layer 1
+        if(layers[0]) layers[0].targetMat = materials[0] || 'None';
+        
+        // If we have a second material, assign it to layer 2
+        if(layers[1] && materials[1]) layers[1].targetMat = materials[1];
+    }
+
+    // UI Helpers
+    function updateMaterialListUI(names) {
+        const div = document.getElementById('mat-content');
+        div.innerHTML = names.filter(n => n !== 'None').map(n => 
+            `<div class="mat-item"><span class="mat-name">▪ ${n}</span></div>`
+        ).join('');
+    }
+
+    function loadHDRI(url) {
+        new RGBELoader().load(url, (texture) => {
+            texture.mapping = THREE.EquirectangularReflectionMapping;
+            scene.background = texture;
+            scene.environment = texture;
+        });
+    }
+
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        if(config.autoRotate && currentModel) currentModel.rotation.y += 0.005;
+        renderer.render(scene, camera);
+    }
+
+    // Event Listeners
+    document.getElementById('file-input').addEventListener('change', (e) => {
+        if(e.target.files[0]) loadModel(URL.createObjectURL(e.target.files[0]));
+    });
+    
+    document.getElementById('hdri-input').addEventListener('change', (e) => {
+        if(e.target.files[0]) loadHDRI(URL.createObjectURL(e.target.files[0]));
+    });
+
+    // Start
+    init();
+</script>
+</body>
+</html>
