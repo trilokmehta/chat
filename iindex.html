@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Substance Style Visualizer with Scale</title>
+    <title>Steampunk Robot Visualizer</title>
     <style>
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; background-color: #121212; }
         #canvas-container { width: 100vw; height: 100vh; display: block; }
@@ -27,8 +27,8 @@
         h1 { font-size: 16px; margin: 0 0 10px 0; color: #fff; letter-spacing: 0.5px; text-transform: uppercase; font-weight: 700; }
         p { font-size: 11px; color: #aaa; margin-bottom: 20px; }
 
-        /* Upload Button */
-        .file-upload {
+        /* Standard Buttons */
+        .btn {
             display: flex;
             align-items: center;
             justify-content: center;
@@ -43,9 +43,19 @@
             font-weight: 600;
             transition: all 0.2s;
             border: 1px solid #555;
+            text-align: center;
+            user-select: none;
         }
-        .file-upload:hover { background: #007acc; color: #fff; border-color: #007acc; }
+        .btn:hover { background: #007acc; color: #fff; border-color: #007acc; }
         
+        /* Special Demo Button Style */
+        .btn-demo {
+            background: #2e7d32; /* Green */
+            border-color: #1b5e20;
+            margin-bottom: 20px; /* Extra spacing */
+        }
+        .btn-demo:hover { background: #4caf50; border-color: #2e7d32; }
+
         input[type="file"] { display: none; }
         
         #status { 
@@ -71,7 +81,7 @@
         }
         .mat-name { color: #ccc; }
         
-        /* GUI Tweaks for Substance Feel */
+        /* GUI Tweaks */
         .dg.main {
             position: absolute !important;
             top: 20px !important;
@@ -80,7 +90,6 @@
         }
         .dg .c .slider { background: #222 !important; }
         .dg .c .slider-fg { background: #007bff !important; }
-        .dg .cr.function { border-left: 3px solid #4caf50; } /* Highlight buttons */
     </style>
     
     <script type="importmap">
@@ -96,19 +105,25 @@
 
     <div id="ui-panel">
         <h1>Material Studio</h1>
-        <p>Layer-based workflow with Alpha control</p>
+        <p>Layer-based workflow</p>
         
-        <label for="file-input" class="file-upload">
+        <div id="btn-load-demo" class="btn btn-demo">
+            🎮 Load Demo Robot
+        </div>
+
+        <div style="border-top: 1px solid #5f5b5b; margin: 10px 0;"></div>
+
+        <label for="file-input" class="btn">
             📂 Open Model (.glb)
         </label>
         <input type="file" id="file-input" accept=".glb, .gltf">
         
-        <label for="hdri-input" class="file-upload">
+        <label for="hdri-input" class="btn">
             ☀️ Load Environment (.hdr)
         </label>
         <input type="file" id="hdri-input" accept=".hdr, .exr">
         
-        <div id="status">Ready to load.</div>
+        <div id="status">Ready.</div>
         
         <div id="material-list">
             <strong>Detected Materials:</strong><br>
@@ -130,29 +145,19 @@
         exposure: 1.0,
         envRotation: 0,
         autoRotate: false,
-        scale: 1.0, // NEW: Scale factor for the model
+        scale: 1.0,
     };
 
     // --- DYNAMIC LAYERS ---
     let layers = [
         { 
             id: 1,
-            enabled: true,
+            enabled: false,
             name: 'Base Layer', 
             targetMat: 'None', 
             color: '#c08282', 
             roughness: 0.5, 
             metalness: 0.0,
-            alpha: 1.0 
-        },
-        { 
-            id: 2,
-            enabled: true,
-            name: 'Details', 
-            targetMat: 'None', 
-            color: '#222222', 
-            roughness: 0.2, 
-            metalness: 1.0,
             alpha: 1.0 
         }
     ];
@@ -198,7 +203,7 @@
         controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
 
-        // Default Env
+        // Default: Just a neutral environment, waiting for user action
         loadHDRI('https://threejs.org/examples/textures/equirectangular/venice_sunset_1k.hdr');
 
         window.addEventListener('resize', onWindowResize);
@@ -227,21 +232,15 @@
                 const originalProps = originalMaterials.get(matName);
 
                 if (activeLayer) {
-                    // APPLY LAYER SETTINGS
                     child.material.color.set(activeLayer.color);
                     child.material.roughness = activeLayer.roughness;
                     child.material.metalness = activeLayer.metalness;
-                    
-                    // Alpha/Transparency
                     child.material.opacity = activeLayer.alpha;
                     child.material.transparent = activeLayer.alpha < 1.0;
-
                 } else {
-                    // RESET TO ORIGINAL SETTINGS
                     child.material.copy(originalProps); 
                     child.material.needsUpdate = true;
                 }
-                
                 child.material.needsUpdate = true;
             }
         });
@@ -270,16 +269,13 @@
         applyLayers();
     }
 
-    // 3. GUI SETUP (Updated for Scale)
+    // 3. GUI SETUP
     function setupGUI() {
         if (gui) gui.destroy();
         gui = new GUI({ title: 'Layer Stack' });
         
-        // GLOBAL SETTINGS
         const envFolder = gui.addFolder('🌍 Global Settings');
-        
         envFolder.add(config, 'exposure', 0, 3).name('Exposure').onChange(v => renderer.toneMappingExposure = v);
-        
         envFolder.add(config, 'envRotation', 0, 360).name('Env Rotation').onChange(v => {
             if(scene && scene.environment && scene.background) {
                 const rad = v * (Math.PI / 180);
@@ -287,42 +283,25 @@
                 scene.environment.rotation.y = rad;
             }
         });
-        
-        // NEW: Scale Control
-        envFolder.add(config, 'scale', 0.1, 5.0).name('Scale Model'); // No onChange needed, it's applied in animate()
-        
+        envFolder.add(config, 'scale', 0.1, 5.0).name('Scale Model');
         envFolder.add(config, 'autoRotate').name('Turntable');
 
-        // ACTIONS
         const actionParams = { add: addNewLayer };
         gui.add(actionParams, 'add').name('➕ Add New Layer');
 
-        // LAYERS
         [...layers].reverse().forEach((layer, index) => {
-            
             const folder = gui.addFolder((layer.enabled ? '🟢 ' : '⚪ ') + layer.name);
-            
-            // Toggle Visibility
             folder.add(layer, 'enabled').name('Enable Layer').onChange(() => {
                 folder.title((layer.enabled ? '🟢 ' : '⚪ ') + layer.name); 
                 applyLayers();
             });
-
-            // Target Logic
             folder.add(layer, 'targetMat', uniqueMaterialNames).name('Link to Material').onChange(applyLayers);
-
-            // Style Logic
             folder.addColor(layer, 'color').name('Color').onChange(applyLayers);
             folder.add(layer, 'roughness', 0, 1).name('Roughness').onChange(applyLayers);
             folder.add(layer, 'metalness', 0, 1).name('Metalness').onChange(applyLayers);
-            
-            // Alpha Control
             folder.add(layer, 'alpha', 0, 1).name('Alpha (Opacity)').onChange(applyLayers);
-            
-            // Delete Button
             const delObj = { del: () => removeLayer(layer.id) };
             folder.add(delObj, 'del').name('🗑️ Delete Layer');
-
             if(index !== 0) folder.close();
         });
     }
@@ -331,6 +310,7 @@
     function loadModel(url) {
         const loader = new GLTFLoader();
         document.getElementById('status').innerText = 'Loading Model...';
+        document.getElementById('status').style.color = '#ccc';
         
         loader.load(url, (gltf) => {
             if (currentModel) {
@@ -345,7 +325,6 @@
 
             currentModel = gltf.scene;
             
-            // Clear and Detect Materials
             originalMaterials.clear();
             const matSet = new Set(['None']);
             
@@ -364,27 +343,32 @@
             
             uniqueMaterialNames = Array.from(matSet);
             updateMaterialListUI(uniqueMaterialNames);
-            
             autoAssignLayers(uniqueMaterialNames);
             
-            // Center Model: Only apply centering here. Scaling happens in animate loop.
+            // Center Model
             const box = new THREE.Box3().setFromObject(currentModel);
             const center = box.getCenter(new THREE.Vector3());
             currentModel.position.sub(center);
             
             scene.add(currentModel);
             
+            // Apply scale immediately
+            currentModel.scale.setScalar(config.scale);
+            
             setupGUI();
             applyLayers();
             
-            document.getElementById('status').innerText = 'Model Loaded';
+            document.getElementById('status').innerText = 'Ready.';
             document.getElementById('status').style.color = '#4caf50';
+        }, undefined, (err) => {
+            console.error(err);
+            document.getElementById('status').innerText = 'Error loading file.';
+            document.getElementById('status').style.color = '#ff4444';
         });
     }
     
     function autoAssignLayers(names) {
         const materials = names.filter(n => n !== 'None');
-        
         if(layers[0]) layers[0].targetMat = materials[0] || 'None';
         if(layers[1] && materials[1]) layers[1].targetMat = materials[1];
     }
@@ -399,15 +383,8 @@
     function loadHDRI(url) {
         new RGBELoader().load(url, (texture) => {
             texture.mapping = THREE.EquirectangularReflectionMapping;
-            
-            const backgroundTexture = texture;
-            const environmentTexture = texture.clone();
-
-            scene.background = backgroundTexture;
-            scene.environment = environmentTexture;
-
-            scene.background.rotation = new THREE.Euler(0, 0, 0, 'XYZ');
-            scene.environment.rotation = new THREE.Euler(0, 0, 0, 'XYZ');
+            scene.background = texture;
+            scene.environment = texture;
         });
     }
 
@@ -417,29 +394,33 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
-    // 5. ANIMATE (Updated for Scale)
+    // 5. ANIMATE
     function animate() {
         requestAnimationFrame(animate);
         controls.update();
-        
         if(currentModel) {
-            // APPLY GLOBAL SCALE HERE
             currentModel.scale.setScalar(config.scale); 
-            
-            // APPLY AUTO-ROTATE
             if(config.autoRotate) currentModel.rotation.y += 0.005;
         }
-
         renderer.render(scene, camera);
     }
 
-    // Event Listeners
+    // --- EVENT LISTENERS ---
+    
+    // Manual File Uploads
     document.getElementById('file-input').addEventListener('change', (e) => {
         if(e.target.files[0]) loadModel(URL.createObjectURL(e.target.files[0]));
     });
     
     document.getElementById('hdri-input').addEventListener('change', (e) => {
         if(e.target.files[0]) loadHDRI(URL.createObjectURL(e.target.files[0]));
+    });
+
+    // DEMO BUTTON LISTENER
+    document.getElementById('btn-load-demo').addEventListener('click', () => {
+        // Load specific files from the demo folder
+        loadHDRI('./demo/ballroom_4k.hdr');
+        loadModel('./demo/combat_steampunk_robot.glb');
     });
 
     // Start
