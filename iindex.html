@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Substance Style Visualizer</title>
+    <title>Substance Style Visualizer with Scale</title>
     <style>
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; background-color: #121212; }
         #canvas-container { width: 100vw; height: 100vh; display: block; }
@@ -96,7 +96,7 @@
 
     <div id="ui-panel">
         <h1>Material Studio</h1>
-        <p>Layer-based workflow</p>
+        <p>Layer-based workflow with Alpha control</p>
         
         <label for="file-input" class="file-upload">
             📂 Open Model (.glb)
@@ -130,10 +130,10 @@
         exposure: 1.0,
         envRotation: 0,
         autoRotate: false,
+        scale: 1.0, // NEW: Scale factor for the model
     };
 
     // --- DYNAMIC LAYERS ---
-    // We start with 2 default layers
     let layers = [
         { 
             id: 1,
@@ -142,7 +142,8 @@
             targetMat: 'None', 
             color: '#c08282', 
             roughness: 0.5, 
-            metalness: 0.0 
+            metalness: 0.0,
+            alpha: 1.0 
         },
         { 
             id: 2,
@@ -151,7 +152,8 @@
             targetMat: 'None', 
             color: '#222222', 
             roughness: 0.2, 
-            metalness: 1.0 
+            metalness: 1.0,
+            alpha: 1.0 
         }
     ];
 
@@ -160,6 +162,9 @@
     let uniqueMaterialNames = ['None']; 
     let gui;
     
+    // --- Material Storage for Reset ---
+    const originalMaterials = new Map();
+
     // 1. INIT SCENE
     function init() {
         const container = document.getElementById('canvas-container');
@@ -198,7 +203,6 @@
 
         window.addEventListener('resize', onWindowResize);
         
-        // Initialize GUI after scene is ready
         setupGUI();
         animate();
     }
@@ -207,11 +211,8 @@
     function applyLayers() {
         if (!currentModel) return;
 
-        // Map "Target Material" -> "Active Layer Config"
         const materialMap = {};
 
-        // Loop through layers. 
-        // Later layers overwrite earlier ones (Stack behavior)
         layers.forEach(layer => {
             if (layer.enabled && layer.targetMat && layer.targetMat !== 'None') {
                 materialMap[layer.targetMat] = layer;
@@ -219,17 +220,28 @@
         });
 
         currentModel.traverse((child) => {
-            if (child.isMesh && child.material) {
+            if (child.isMesh && child.material && originalMaterials.has(child.material.name)) {
+                
                 const matName = child.material.name;
                 const activeLayer = materialMap[matName];
+                const originalProps = originalMaterials.get(matName);
 
                 if (activeLayer) {
+                    // APPLY LAYER SETTINGS
                     child.material.color.set(activeLayer.color);
                     child.material.roughness = activeLayer.roughness;
                     child.material.metalness = activeLayer.metalness;
+                    
+                    // Alpha/Transparency
+                    child.material.opacity = activeLayer.alpha;
+                    child.material.transparent = activeLayer.alpha < 1.0;
+
                 } else {
-                    // Optional: Reset logic could go here
+                    // RESET TO ORIGINAL SETTINGS
+                    child.material.copy(originalProps); 
+                    child.material.needsUpdate = true;
                 }
+                
                 child.material.needsUpdate = true;
             }
         });
@@ -243,11 +255,12 @@
             enabled: true,
             name: `New Layer ${newId}`,
             targetMat: 'None',
-            color: '#' + Math.floor(Math.random()*16777215).toString(16), // Random hex
+            color: '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0'), 
             roughness: 0.5,
-            metalness: 0.0
+            metalness: 0.0,
+            alpha: 1.0
         });
-        setupGUI(); // Rebuild UI to show new layer
+        setupGUI(); 
     }
 
     // Helper to remove a layer
@@ -257,7 +270,7 @@
         applyLayers();
     }
 
-    // 3. GUI SETUP
+    // 3. GUI SETUP (Updated for Scale)
     function setupGUI() {
         if (gui) gui.destroy();
         gui = new GUI({ title: 'Layer Stack' });
@@ -267,13 +280,16 @@
         
         envFolder.add(config, 'exposure', 0, 3).name('Exposure').onChange(v => renderer.toneMappingExposure = v);
         
-        // Fix for "Cannot set properties of undefined"
         envFolder.add(config, 'envRotation', 0, 360).name('Env Rotation').onChange(v => {
-            if(scene && scene.backgroundRotation) {
-                scene.backgroundRotation.y = v * (Math.PI / 180);
-                scene.environmentRotation.y = v * (Math.PI / 180);
+            if(scene && scene.environment && scene.background) {
+                const rad = v * (Math.PI / 180);
+                scene.background.rotation.y = rad;
+                scene.environment.rotation.y = rad;
             }
         });
+        
+        // NEW: Scale Control
+        envFolder.add(config, 'scale', 0.1, 5.0).name('Scale Model'); // No onChange needed, it's applied in animate()
         
         envFolder.add(config, 'autoRotate').name('Turntable');
 
@@ -282,16 +298,13 @@
         gui.add(actionParams, 'add').name('➕ Add New Layer');
 
         // LAYERS
-        // We iterate backwards so the top layer in GUI acts like top layer in Photoshop
         [...layers].reverse().forEach((layer, index) => {
-            // Find actual index in original array
-            const originalIndex = layers.indexOf(layer);
             
             const folder = gui.addFolder((layer.enabled ? '🟢 ' : '⚪ ') + layer.name);
             
             // Toggle Visibility
             folder.add(layer, 'enabled').name('Enable Layer').onChange(() => {
-                folder.title((layer.enabled ? '🟢 ' : '⚪ ') + layer.name); // Update icon
+                folder.title((layer.enabled ? '🟢 ' : '⚪ ') + layer.name); 
                 applyLayers();
             });
 
@@ -303,11 +316,13 @@
             folder.add(layer, 'roughness', 0, 1).name('Roughness').onChange(applyLayers);
             folder.add(layer, 'metalness', 0, 1).name('Metalness').onChange(applyLayers);
             
+            // Alpha Control
+            folder.add(layer, 'alpha', 0, 1).name('Alpha (Opacity)').onChange(applyLayers);
+            
             // Delete Button
             const delObj = { del: () => removeLayer(layer.id) };
             folder.add(delObj, 'del').name('🗑️ Delete Layer');
 
-            // Close folder by default to save space, open first one
             if(index !== 0) folder.close();
         });
     }
@@ -320,7 +335,6 @@
         loader.load(url, (gltf) => {
             if (currentModel) {
                 scene.remove(currentModel);
-                // Dispose geometry/materials to prevent memory leaks
                 currentModel.traverse(c => {
                     if(c.isMesh) {
                         c.geometry.dispose();
@@ -331,7 +345,8 @@
 
             currentModel = gltf.scene;
             
-            // Detect Materials
+            // Clear and Detect Materials
+            originalMaterials.clear();
             const matSet = new Set(['None']);
             
             currentModel.traverse(c => {
@@ -340,9 +355,9 @@
                     c.receiveShadow = true;
                     matSet.add(c.material.name);
                     
-                    // Ensure environment map intensity is standard
                     if(c.material.isMeshStandardMaterial) {
                         c.material.envMapIntensity = 1;
+                        originalMaterials.set(c.material.name, c.material.clone());
                     }
                 }
             });
@@ -350,10 +365,9 @@
             uniqueMaterialNames = Array.from(matSet);
             updateMaterialListUI(uniqueMaterialNames);
             
-            // Smart Auto-Assign for default layers
             autoAssignLayers(uniqueMaterialNames);
             
-            // Center Model
+            // Center Model: Only apply centering here. Scaling happens in animate loop.
             const box = new THREE.Box3().setFromObject(currentModel);
             const center = box.getCenter(new THREE.Vector3());
             currentModel.position.sub(center);
@@ -367,20 +381,14 @@
             document.getElementById('status').style.color = '#4caf50';
         });
     }
-
+    
     function autoAssignLayers(names) {
-        // Simple logic to try and fill the first few layers
         const materials = names.filter(n => n !== 'None');
-        if (materials.length === 0) return;
-
-        // Reset layer 1
-        if(layers[0]) layers[0].targetMat = materials[0] || 'None';
         
-        // If we have a second material, assign it to layer 2
+        if(layers[0]) layers[0].targetMat = materials[0] || 'None';
         if(layers[1] && materials[1]) layers[1].targetMat = materials[1];
     }
 
-    // UI Helpers
     function updateMaterialListUI(names) {
         const div = document.getElementById('mat-content');
         div.innerHTML = names.filter(n => n !== 'None').map(n => 
@@ -391,8 +399,15 @@
     function loadHDRI(url) {
         new RGBELoader().load(url, (texture) => {
             texture.mapping = THREE.EquirectangularReflectionMapping;
-            scene.background = texture;
-            scene.environment = texture;
+            
+            const backgroundTexture = texture;
+            const environmentTexture = texture.clone();
+
+            scene.background = backgroundTexture;
+            scene.environment = environmentTexture;
+
+            scene.background.rotation = new THREE.Euler(0, 0, 0, 'XYZ');
+            scene.environment.rotation = new THREE.Euler(0, 0, 0, 'XYZ');
         });
     }
 
@@ -402,10 +417,19 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
+    // 5. ANIMATE (Updated for Scale)
     function animate() {
         requestAnimationFrame(animate);
         controls.update();
-        if(config.autoRotate && currentModel) currentModel.rotation.y += 0.005;
+        
+        if(currentModel) {
+            // APPLY GLOBAL SCALE HERE
+            currentModel.scale.setScalar(config.scale); 
+            
+            // APPLY AUTO-ROTATE
+            if(config.autoRotate) currentModel.rotation.y += 0.005;
+        }
+
         renderer.render(scene, camera);
     }
 
