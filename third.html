@@ -1,0 +1,1208 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Science Edge — Civil Services</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;1,9..40,400&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --accent: #0a6ee8;
+        --accent-dark: #0952b3;
+        --accent-light: #e6f1fb;
+        --dark-card: #060f1e;
+        --dark-nav: #08111f;
+        --text: #0f1520;
+        --text-muted: #5a6478;
+        --border: rgba(0, 0, 0, 0.08);
+        --bg: #ffffff;
+        --bg-surface: #f7f9fc;
+        --radius-sm: 8px;
+        --radius-md: 12px;
+        --radius-lg: 16px;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        font-family: "DM Sans", sans-serif;
+        color: var(--text);
+        background: var(--bg);
+        overflow-x: hidden;
+      }
+
+      /* TICKER */
+      .ticker-wrap {
+        background: var(--dark-nav);
+        padding: 8px 0;
+        overflow: hidden;
+      }
+      .ticker-track {
+        display: inline-flex;
+        white-space: nowrap;
+        animation: ticker 35s linear infinite;
+      }
+      .ticker-track span {
+        color: #c8d8f0;
+        font-size: 12px;
+        padding: 0 40px;
+        letter-spacing: 0.02em;
+      }
+      .ticker-track span::before {
+        content: "●";
+        margin-right: 12px;
+        color: var(--accent);
+        font-size: 7px;
+        vertical-align: middle;
+      }
+      @keyframes ticker {
+        from {
+          transform: translateX(0);
+        }
+        to {
+          transform: translateX(-50%);
+        }
+      }
+
+      /* NAV */
+      nav {
+        position: sticky;
+        top: 0;
+        z-index: 200;
+        background: rgba(255, 255, 255, 0.97);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--border);
+        height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 32px;
+      }
+
+      .logo {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        text-decoration: none;
+      }
+      .logo-mark {
+        width: 36px;
+        height: 36px;
+        background: var(--accent);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .logo-mark svg {
+        width: 20px;
+        height: 20px;
+        fill: none;
+        stroke: white;
+        stroke-width: 1.8;
+      }
+      .logo-wordmark strong {
+        display: block;
+        font-family: "Sora", sans-serif;
+        font-size: 17px;
+        font-weight: 700;
+        color: var(--text);
+        letter-spacing: -0.03em;
+        line-height: 1;
+      }
+      .logo-wordmark strong em {
+        font-style: normal;
+        color: var(--accent);
+      }
+      .logo-wordmark small {
+        display: block;
+        font-size: 9.5px;
+        font-weight: 400;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin-top: 2px;
+      }
+
+      .nav-center {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+      }
+      .nav-center a {
+        font-size: 13px;
+        font-weight: 400;
+        color: var(--text-muted);
+        text-decoration: none;
+        padding: 7px 12px;
+        border-radius: var(--radius-sm);
+        transition:
+          background 0.15s,
+          color 0.15s;
+      }
+      .nav-center a:hover {
+        background: var(--bg-surface);
+        color: var(--text);
+      }
+      .nav-center a.active {
+        color: var(--accent);
+        font-weight: 500;
+      }
+
+      .nav-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        border-radius: var(--radius-sm);
+        font-size: 13px;
+        font-weight: 500;
+        font-family: "DM Sans", sans-serif;
+        cursor: pointer;
+        border: none;
+        transition: all 0.15s;
+        text-decoration: none;
+      }
+      .btn svg {
+        width: 14px;
+        height: 14px;
+        flex-shrink: 0;
+      }
+
+      .btn-ghost {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--text);
+      }
+      .btn-ghost:hover {
+        background: var(--bg-surface);
+      }
+
+      .btn-primary {
+        background: var(--accent);
+        color: white;
+      }
+      .btn-primary:hover {
+        background: var(--accent-dark);
+        transform: translateY(-1px);
+      }
+
+      .btn-dark {
+        background: var(--dark-nav);
+        color: white;
+      }
+      .btn-dark:hover {
+        opacity: 0.88;
+      }
+
+      /* HERO */
+      .hero {
+        max-width: 1160px;
+        margin: 0 auto;
+        padding: 60px 32px 48px;
+        display: grid;
+        grid-template-columns: 1fr 420px;
+        gap: 40px;
+        align-items: center;
+      }
+
+      .hero-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--accent-light);
+        color: #0952b3;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        padding: 5px 13px;
+        border-radius: 100px;
+        border: 1px solid rgba(10, 110, 232, 0.2);
+        margin-bottom: 20px;
+      }
+      .blink-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--accent);
+        animation: blink 2s ease-in-out infinite;
+      }
+      @keyframes blink {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.3;
+          transform: scale(0.7);
+        }
+      }
+
+      .hero h1 {
+        font-family: "Sora", sans-serif;
+        font-size: clamp(30px, 4.5vw, 50px);
+        font-weight: 700;
+        line-height: 1.1;
+        letter-spacing: -0.03em;
+        color: var(--text);
+        margin-bottom: 8px;
+      }
+      .hero h1 .hl {
+        color: var(--accent);
+      }
+
+      .hero-desc {
+        font-size: 15px;
+        color: var(--text-muted);
+        line-height: 1.7;
+        max-width: 480px;
+        margin-bottom: 32px;
+      }
+
+      .hero-ctas {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .hero-ctas .btn {
+        padding: 12px 24px;
+        font-size: 14px;
+        border-radius: var(--radius-md);
+      }
+
+      .hero-stats {
+        display: flex;
+        gap: 28px;
+        margin-top: 36px;
+        padding-top: 28px;
+        border-top: 1px solid var(--border);
+      }
+      .hstat strong {
+        display: block;
+        font-family: "Sora", sans-serif;
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--text);
+        letter-spacing: -0.02em;
+      }
+      .hstat strong span {
+        color: var(--accent);
+      }
+      .hstat small {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: 2px;
+        display: block;
+      }
+
+      /* HERO DARK CARD */
+      .hero-card {
+        background: var(--dark-card);
+        border-radius: 20px;
+        padding: 26px;
+        color: white;
+        position: relative;
+        overflow: hidden;
+      }
+      .hero-card::before {
+        content: "";
+        position: absolute;
+        top: -60px;
+        right: -60px;
+        width: 200px;
+        height: 200px;
+        background: radial-gradient(
+          circle,
+          rgba(10, 110, 232, 0.25) 0%,
+          transparent 65%
+        );
+        pointer-events: none;
+      }
+
+      .card-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        background: rgba(255, 255, 255, 0.08);
+        color: #90b8f8;
+        font-size: 11px;
+        font-weight: 500;
+        padding: 5px 12px;
+        border-radius: 100px;
+        margin-bottom: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .card-tag-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #90b8f8;
+        animation: blink 1.8s ease-in-out infinite;
+      }
+
+      .hero-card h2 {
+        font-family: "Sora", sans-serif;
+        font-size: 22px;
+        font-weight: 700;
+        line-height: 1.2;
+        margin-bottom: 6px;
+        color: white;
+      }
+      .hero-card h2 em {
+        font-style: normal;
+        color: #f0c060;
+      }
+      .hero-card p {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.5);
+        line-height: 1.6;
+        margin-bottom: 18px;
+      }
+
+      .card-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+        margin-bottom: 22px;
+      }
+      .cpill {
+        font-size: 11.5px;
+        padding: 5px 12px;
+        border-radius: 100px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: rgba(255, 255, 255, 0.65);
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .btn-view-details {
+        width: 100%;
+        background: var(--accent);
+        color: white;
+        border: none;
+        padding: 13px;
+        border-radius: var(--radius-md);
+        font-size: 14px;
+        font-weight: 600;
+        font-family: "DM Sans", sans-serif;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition:
+          opacity 0.15s,
+          transform 0.1s;
+      }
+      .btn-view-details:hover {
+        opacity: 0.88;
+        transform: translateY(-1px);
+      }
+      .btn-view-details svg {
+        width: 15px;
+        height: 15px;
+        stroke: white;
+        fill: none;
+        stroke-width: 2.5;
+      }
+
+      /* STATS BAR */
+      .stats-bar {
+        background: var(--bg-surface);
+        border-top: 1px solid var(--border);
+        border-bottom: 1px solid var(--border);
+      }
+      .stats-bar-inner {
+        max-width: 1160px;
+        margin: 0 auto;
+        padding: 0 32px;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+      }
+      .sbar-item {
+        padding: 22px 20px;
+        text-align: center;
+        border-right: 1px solid var(--border);
+      }
+      .sbar-item:last-child {
+        border-right: none;
+      }
+      .sbar-num {
+        font-family: "Sora", sans-serif;
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text);
+        letter-spacing: -0.02em;
+      }
+      .sbar-num span {
+        color: var(--accent);
+      }
+      .sbar-lbl {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: 3px;
+      }
+
+      /* SECTION */
+      .section {
+        max-width: 1160px;
+        margin: 0 auto;
+        padding: 64px 32px;
+      }
+      .section-head {
+        margin-bottom: 36px;
+      }
+      .sec-label {
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-bottom: 8px;
+      }
+      .sec-title {
+        font-family: "Sora", sans-serif;
+        font-size: clamp(22px, 3vw, 32px);
+        font-weight: 700;
+        letter-spacing: -0.025em;
+        color: var(--text);
+        margin-bottom: 8px;
+      }
+      .sec-desc {
+        font-size: 14px;
+        color: var(--text-muted);
+        line-height: 1.7;
+        max-width: 520px;
+      }
+
+      /* COURSE GRID */
+      .course-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 16px;
+      }
+
+      .course-card {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 22px;
+        cursor: pointer;
+        transition:
+          border-color 0.2s,
+          transform 0.18s,
+          box-shadow 0.2s;
+      }
+      .course-card:hover {
+        border-color: var(--accent);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 28px rgba(10, 110, 232, 0.1);
+      }
+
+      .cc-icon {
+        width: 46px;
+        height: 46px;
+        border-radius: 12px;
+        background: var(--accent-light);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 16px;
+      }
+      .cc-icon svg {
+        width: 22px;
+        height: 22px;
+        stroke: var(--accent);
+        fill: none;
+        stroke-width: 1.8;
+      }
+
+      .course-card h3 {
+        font-family: "Sora", sans-serif;
+        font-size: 14.5px;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 7px;
+        line-height: 1.35;
+      }
+      .course-card p {
+        font-size: 12.5px;
+        color: var(--text-muted);
+        line-height: 1.6;
+        margin-bottom: 16px;
+      }
+
+      .cc-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--accent);
+        text-decoration: none;
+      }
+      .cc-link svg {
+        width: 13px;
+        height: 13px;
+        stroke: var(--accent);
+        fill: none;
+        stroke-width: 2.5;
+      }
+
+      /* ANNOUNCE BAR */
+      .announce-bar {
+        background: var(--accent);
+        padding: 11px 0;
+        overflow: hidden;
+      }
+      .announce-track {
+        display: inline-flex;
+        white-space: nowrap;
+        animation: ticker 32s linear infinite;
+      }
+      .announce-track span {
+        color: white;
+        font-size: 12.5px;
+        font-weight: 500;
+        padding: 0 44px;
+      }
+      .announce-track span::before {
+        content: "»";
+        margin-right: 10px;
+        opacity: 0.65;
+      }
+
+      /* WHY US */
+      .why-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 14px;
+      }
+      .why-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 22px;
+      }
+      .why-num {
+        font-family: "Sora", sans-serif;
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--accent);
+        letter-spacing: -0.04em;
+        line-height: 1;
+        margin-bottom: 8px;
+      }
+      .why-card h4 {
+        font-size: 13.5px;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 4px;
+      }
+      .why-card p {
+        font-size: 12px;
+        color: var(--text-muted);
+        line-height: 1.6;
+      }
+
+      /* FOOTER */
+      footer {
+        background: var(--dark-nav);
+        color: rgba(255, 255, 255, 0.45);
+        text-align: center;
+        padding: 30px 32px;
+        font-size: 12.5px;
+      }
+      footer strong {
+        color: white;
+        font-weight: 600;
+      }
+
+      /* WHATSAPP FAB — Deep deep glow */
+      .wa-fab {
+        position: fixed;
+        bottom: 26px;
+        right: 26px;
+        width: 58px;
+        height: 58px;
+        border-radius: 50%;
+        background: #25d366;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        z-index: 9999;
+        cursor: pointer;
+        box-shadow:
+          0 0 0 4px rgba(37, 211, 102, 0.2),
+          0 0 16px 6px rgba(37, 211, 102, 0.5),
+          0 0 36px 12px rgba(37, 211, 102, 0.3),
+          0 0 70px 22px rgba(37, 211, 102, 0.18),
+          0 0 120px 40px rgba(37, 211, 102, 0.09);
+        animation: wa-pulse 2.2s ease-in-out infinite;
+        transition: transform 0.2s;
+      }
+      .wa-fab:hover {
+        transform: scale(1.13);
+        box-shadow:
+          0 0 0 6px rgba(37, 211, 102, 0.3),
+          0 0 24px 10px rgba(37, 211, 102, 0.65),
+          0 0 52px 18px rgba(37, 211, 102, 0.4),
+          0 0 90px 32px rgba(37, 211, 102, 0.22),
+          0 0 150px 55px rgba(37, 211, 102, 0.1);
+      }
+      @keyframes wa-pulse {
+        0%,
+        100% {
+          box-shadow:
+            0 0 0 4px rgba(37, 211, 102, 0.2),
+            0 0 16px 6px rgba(37, 211, 102, 0.5),
+            0 0 36px 12px rgba(37, 211, 102, 0.3),
+            0 0 70px 22px rgba(37, 211, 102, 0.18),
+            0 0 120px 40px rgba(37, 211, 102, 0.09);
+        }
+        50% {
+          box-shadow:
+            0 0 0 6px rgba(37, 211, 102, 0.28),
+            0 0 24px 10px rgba(37, 211, 102, 0.65),
+            0 0 55px 20px rgba(37, 211, 102, 0.4),
+            0 0 100px 34px rgba(37, 211, 102, 0.22),
+            0 0 160px 55px rgba(37, 211, 102, 0.11);
+        }
+      }
+      .wa-fab svg {
+        width: 28px;
+        height: 28px;
+        fill: white;
+        position: relative;
+        z-index: 1;
+      }
+      .wa-badge {
+        position: absolute;
+        top: 1px;
+        right: 1px;
+        width: 15px;
+        height: 15px;
+        background: #ff3434;
+        border-radius: 50%;
+        border: 2.5px solid white;
+        z-index: 2;
+        animation: badge-bounce 2.2s ease-in-out infinite;
+      }
+      @keyframes badge-bounce {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.2);
+        }
+      }
+
+      /* MOBILE */
+      @media (max-width: 900px) {
+        .hero {
+          grid-template-columns: 1fr;
+          padding: 36px 24px 32px;
+          gap: 28px;
+        }
+        .hero-card {
+          max-width: 100%;
+        }
+        .stats-bar-inner {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .sbar-item:nth-child(2) {
+          border-right: none;
+        }
+        .sbar-item:nth-child(3) {
+          border-top: 1px solid var(--border);
+          border-right: 1px solid var(--border);
+        }
+        .sbar-item:nth-child(4) {
+          border-top: 1px solid var(--border);
+          border-right: none;
+        }
+      }
+      @media (max-width: 640px) {
+        nav {
+          padding: 0 18px;
+        }
+        .nav-center {
+          display: none;
+        }
+        .btn-ghost {
+          display: none;
+        }
+        .section {
+          padding: 44px 20px;
+        }
+        .hero {
+          padding: 28px 20px;
+        }
+        .hero-stats {
+          gap: 18px;
+          flex-wrap: wrap;
+        }
+        .course-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+        .why-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      @media (max-width: 420px) {
+        .course-grid {
+          grid-template-columns: 1fr;
+        }
+        .why-grid {
+          grid-template-columns: 1fr;
+        }
+        .btn-dark {
+          display: none;
+        }
+        .wa-fab {
+          bottom: 18px;
+          right: 18px;
+          width: 52px;
+          height: 52px;
+        }
+        .wa-fab svg {
+          width: 24px;
+          height: 24px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- TICKER -->
+    <div class="ticker-wrap" aria-hidden="true">
+      <div class="ticker-track">
+        <span
+          >UPSC CSE 2026 Notification Expected Soon — Start Preparation
+          Now</span
+        >
+        <span
+          >JPSC 14th CCE 2025 — Enroll Now! Bilingual Classes &amp; Mock
+          Tests</span
+        >
+        <span>BPSC 72nd Notification Open — Limited Seats</span>
+        <span>Mains Answer Writing New Batch Starting</span>
+        <span>Science Edge AI Tool Now Live — Try Free</span>
+        <span
+          >UPSC CSE 2026 Notification Expected Soon — Start Preparation
+          Now</span
+        >
+        <span
+          >JPSC 14th CCE 2025 — Enroll Now! Bilingual Classes &amp; Mock
+          Tests</span
+        >
+        <span>BPSC 72nd Notification Open — Limited Seats</span>
+        <span>Mains Answer Writing New Batch Starting</span>
+        <span>Science Edge AI Tool Now Live — Try Free</span>
+      </div>
+    </div>
+
+    <!-- NAV -->
+    <nav>
+      <a class="logo" href="#">
+        <div class="logo-mark">
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"
+            />
+          </svg>
+        </div>
+        <div class="logo-wordmark">
+          <strong>Science <em>Edge</em></strong>
+          <small>Civil Services</small>
+        </div>
+      </a>
+
+      <div class="nav-center">
+        <a href="#" class="active">UPSC</a>
+        <a href="#">Notes</a>
+        <a href="#">State PSC</a>
+        <a href="#">Optional</a>
+        <a href="#">Resources</a>
+        <a href="#">PYQ Papers</a>
+        <a href="#">Test Series</a>
+      </div>
+
+      <div class="nav-right">
+        <button class="btn btn-ghost">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <circle cx="12" cy="12" r="3" />
+            <path
+              d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"
+            />
+          </svg>
+          Explore AI
+        </button>
+        <button class="btn btn-primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+          </svg>
+          Current Affairs
+        </button>
+        <button class="btn btn-dark">Courses &rarr;</button>
+      </div>
+    </nav>
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-left">
+        <div class="hero-eyebrow">
+          <span class="blink-dot"></span>
+          New Batch — Admissions Open
+        </div>
+        <h1>UPSC Foundation<br /><span class="hl">2026 Prime</span> Batch</h1>
+        <p class="hero-desc">
+          1-Year Integrated Programme covering Prelims, Mains &amp; Interview
+          with Live Classes, Test Series &amp; Personal Mentorship by top
+          faculty.
+        </p>
+        <div class="hero-ctas">
+          <button class="btn btn-primary">Join Now &rarr;</button>
+          <button
+            class="btn btn-ghost"
+            style="
+              padding: 12px 24px;
+              font-size: 14px;
+              border-radius: 12px;
+              border: 1px solid rgba(0, 0, 0, 0.12);
+            "
+          >
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <polygon points="5 3 19 12 5 21 5 3" />
+            </svg>
+            Watch Demo
+          </button>
+        </div>
+        <div class="hero-stats">
+          <div class="hstat">
+            <strong>50<span>K+</span></strong
+            ><small>Students Enrolled</small>
+          </div>
+          <div class="hstat">
+            <strong>200<span>+</span></strong
+            ><small>Selections 2024</small>
+          </div>
+          <div class="hstat">
+            <strong>15<span>+</span></strong
+            ><small>Expert Faculty</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-card">
+        <div class="card-tag">
+          <span class="card-tag-dot"></span>
+          2-Year Programme
+        </div>
+        <h2>UPSC Foundation<br /><em>2027 Two-Year</em></h2>
+        <p>
+          Comprehensive 2-year course for thorough UPSC CSE preparation with
+          complete syllabus, mentorship, and test series.
+        </p>
+        <div class="card-pills">
+          <span class="cpill">2-Year Plan</span>
+          <span class="cpill">Complete Syllabus</span>
+          <span class="cpill">Mentorship</span>
+          <span class="cpill">Live Classes</span>
+        </div>
+        <button class="btn-view-details">
+          View Details
+          <svg viewBox="0 0 24 24">
+            <line x1="5" y1="12" x2="19" y2="12" />
+            <polyline points="12 5 19 12 12 19" />
+          </svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- STATS BAR -->
+    <div class="stats-bar">
+      <div class="stats-bar-inner">
+        <div class="sbar-item">
+          <div class="sbar-num">50<span>K+</span></div>
+          <div class="sbar-lbl">Students Enrolled</div>
+        </div>
+        <div class="sbar-item">
+          <div class="sbar-num">200<span>+</span></div>
+          <div class="sbar-lbl">Selections in 2024</div>
+        </div>
+        <div class="sbar-item">
+          <div class="sbar-num">15<span>+</span></div>
+          <div class="sbar-lbl">Expert Faculties</div>
+        </div>
+        <div class="sbar-item">
+          <div class="sbar-num">98<span>%</span></div>
+          <div class="sbar-lbl">Student Satisfaction</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COURSES -->
+    <section class="section">
+      <div class="section-head">
+        <div class="sec-label">Our Courses</div>
+        <h2 class="sec-title">Everything You Need to Crack UPSC</h2>
+        <p class="sec-desc">
+          Courses aligned with the latest exam trends, designed by toppers and
+          subject matter experts for maximum results.
+        </p>
+      </div>
+      <div class="course-grid">
+        <div class="course-card">
+          <div class="cc-icon">
+            <svg viewBox="0 0 24 24">
+              <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+              <path d="M6 12v5c3 3 9 3 12 0v-5" />
+            </svg>
+          </div>
+          <h3>GS Foundation Course</h3>
+          <p>
+            Complete coverage of all 4 GS papers with structured notes, tests,
+            and daily current affairs integration.
+          </p>
+          <a href="#" class="cc-link"
+            >View Details
+            <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7v10" /></svg
+          ></a>
+        </div>
+        <div class="course-card">
+          <div class="cc-icon">
+            <svg viewBox="0 0 24 24">
+              <rect x="2" y="3" width="20" height="14" rx="2" />
+              <path d="M8 21h8M12 17v4" />
+            </svg>
+          </div>
+          <h3>Live / Online Course for UPSC CSE</h3>
+          <p>
+            Daily live classes with recorded backups, interactive Q&amp;A, and
+            dedicated doubt-clearing sessions.
+          </p>
+          <a href="#" class="cc-link"
+            >View Details
+            <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7v10" /></svg
+          ></a>
+        </div>
+        <div class="course-card">
+          <div class="cc-icon">
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"
+              />
+              <rect x="9" y="3" width="6" height="4" rx="1" />
+              <line x1="9" y1="12" x2="15" y2="12" />
+              <line x1="9" y1="16" x2="13" y2="16" />
+            </svg>
+          </div>
+          <h3>UPSC Prelims Revision Crash Course</h3>
+          <p>
+            Focused 60-day crash programme with intensive MCQ drills, mock
+            tests, and last-mile revision strategy.
+          </p>
+          <a href="#" class="cc-link"
+            >View Details
+            <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7v10" /></svg
+          ></a>
+        </div>
+        <div class="course-card">
+          <div class="cc-icon">
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+              />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="16" y1="13" x2="8" y2="13" />
+              <line x1="16" y1="17" x2="8" y2="17" />
+            </svg>
+          </div>
+          <h3>Mains Test Series for UPSC CSE</h3>
+          <p>
+            Weekly evaluated tests with expert feedback, model answers by
+            toppers, and performance analytics.
+          </p>
+          <a href="#" class="cc-link"
+            >View Details
+            <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7v10" /></svg
+          ></a>
+        </div>
+        <div class="course-card">
+          <div class="cc-icon">
+            <svg viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="2" y1="12" x2="22" y2="12" />
+              <path
+                d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
+              />
+            </svg>
+          </div>
+          <h3>Geography Optional</h3>
+          <p>
+            In-depth Geography optional with map work, diagram practise, and PYQ
+            analysis since 2010.
+          </p>
+          <a href="#" class="cc-link"
+            >View Details
+            <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7v10" /></svg
+          ></a>
+        </div>
+        <div class="course-card">
+          <div class="cc-icon">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+          </div>
+          <h3>Forest Services Exam Batch</h3>
+          <p>
+            Special IFoS batch with forestry optional, science papers, and
+            interview guidance by former officers.
+          </p>
+          <a href="#" class="cc-link"
+            >View Details
+            <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7v10" /></svg
+          ></a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ANNOUNCE BAR -->
+    <div class="announce-bar" aria-hidden="true">
+      <div class="announce-track">
+        <span
+          >UPSC Foundation 2026 Prime Batch — Live Classes, Test Series &amp;
+          Personal Mentorship</span
+        >
+        <span
+          >JPSC 14th CCE Complete Course 2025 — Enroll Now! Bilingual classes
+          &amp; Expert Faculty</span
+        >
+        <span>History Optional 2025 Batch — Starting Soon, Limited Seats</span>
+        <span>Forest Services Exam 2025 — Special Batch Now Open</span>
+        <span>Science Edge AI Tool — Free for All Enrolled Students</span>
+        <span
+          >UPSC Foundation 2026 Prime Batch — Live Classes, Test Series &amp;
+          Personal Mentorship</span
+        >
+        <span
+          >JPSC 14th CCE Complete Course 2025 — Enroll Now! Bilingual classes
+          &amp; Expert Faculty</span
+        >
+        <span>History Optional 2025 Batch — Starting Soon, Limited Seats</span>
+        <span>Forest Services Exam 2025 — Special Batch Now Open</span>
+        <span>Science Edge AI Tool — Free for All Enrolled Students</span>
+      </div>
+    </div>
+
+    <!-- WHY US -->
+    <section class="section">
+      <div class="section-head">
+        <div class="sec-label">Why Science Edge</div>
+        <h2 class="sec-title">Built Different, Results Proven</h2>
+        <p class="sec-desc">
+          Every element of Science Edge is designed around one goal — your
+          selection.
+        </p>
+      </div>
+      <div class="why-grid">
+        <div class="why-card">
+          <div class="why-num">200+</div>
+          <h4>Selections in 2024</h4>
+          <p>
+            Our students cleared UPSC, JPSC, BPSC, and State PSCs in 2024 alone.
+          </p>
+        </div>
+        <div class="why-card">
+          <div class="why-num">15+</div>
+          <h4>Expert Faculty</h4>
+          <p>
+            Toppers, professors, and retired officers who know what the exam
+            demands.
+          </p>
+        </div>
+        <div class="why-card">
+          <div class="why-num">98%</div>
+          <h4>Satisfaction Rate</h4>
+          <p>
+            Based on post-course surveys from enrolled students across all
+            batches.
+          </p>
+        </div>
+        <div class="why-card">
+          <div class="why-num">AI</div>
+          <h4>Science Edge AI</h4>
+          <p>
+            Personalised AI tool for current affairs, answer writing feedback,
+            and study planning.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+      <p>
+        &copy; 2026 <strong>Science Edge Civil Services</strong> &mdash; All
+        rights reserved. Built with purpose for every aspirant.
+      </p>
+    </footer>
+
+    <!-- WHATSAPP FAB -->
+    <a
+      class="wa-fab"
+      href="https://wa.me/919000000000"
+      target="_blank"
+      rel="noopener"
+      title="Chat with us on WhatsApp"
+    >
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"
+        />
+        <path
+          d="M12 0C5.373 0 0 5.373 0 12c0 2.134.558 4.133 1.531 5.873L0 24l6.295-1.508A11.943 11.943 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 0 1-5.28-1.527l-.378-.224-3.937.944.978-3.856-.247-.397A9.818 9.818 0 0 1 12 2.182c5.423 0 9.818 4.395 9.818 9.818 0 5.423-4.395 9.818-9.818 9.818z"
+        />
+      </svg>
+      <div class="wa-badge"></div>
+    </a>
+  </body>
+</html>
